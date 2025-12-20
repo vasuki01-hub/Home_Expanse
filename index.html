@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Milk & Water Daily Expenses Manager</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        :root {
+            --bg: #f4f6f9;
+            --container-bg: white;
+            --text: #333;
+            --heading: #2c3e50;
+            --border: #ddd;
+            --stat-bg: #ecf0f1;
+            --table-header: #f1f1f1;
+            --report-bg: #f0f8ff;
+            --input-border: #ccc;
+            --no-data: #777;
+            --shadow: rgba(0,0,0,0.1);
+        }
+        body.dark-mode {
+            --bg: #121212;
+            --container-bg: #1e1e1e;
+            --text: #e0e0e0;
+            --heading: #f1f1f1;
+            --border: #444;
+            --stat-bg: #2d2d2d;
+            --table-header: #333;
+            --report-bg: #252525;
+            --input-border: #555;
+            --no-data: #999;
+            --shadow: rgba(0,0,0,0.4);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: var(--container-bg);
+            border-radius: 10px;
+            box-shadow: 0 0 15px var(--shadow);
+        }
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        h1 { color: var(--heading); margin-bottom: 10px; }
+        .header-controls {
+            position: absolute;
+            top: 0;
+            right: 0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        select, button {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--input-border);
+            background: var(--container-bg);
+            color: var(--text);
+        }
+        button { background: #3498db; color: white; cursor: pointer; }
+        button:hover { background: #2980b9; }
+        .pdf-btn { background: #e74c3c; margin-left: 10px; }
+        .edit-btn { background: #f39c12; font-size: 0.8em; padding: 4px 8px; margin: 2px; }
+        .delete-btn { background: #e74c3c; font-size: 0.8em; padding: 4px 8px; margin: 2px; }
+        .save-btn { background: #27ae60; }
+        .cancel-btn { background: #95a5a6; }
+        h2 {
+            background: #d35400;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 30px 0 20px;
+            text-align: center;
+        }
+        .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+        }
+        .tab-btn.active { background: #2c3e50; }
+        form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            padding: 20px;
+            background: var(--stat-bg);
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        input, select {
+            padding: 12px;
+            border: 1px solid var(--input-border);
+            border-radius: 5px;
+            width: 100%;
+        }
+        .auto-amount {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #27ae60;
+            padding: 12px;
+            background: #ecf0f1;
+            border-radius: 5px;
+        }
+        .filter {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .calendar-container {
+            margin-top: 20px;
+        }
+        .month-calendar {
+            margin-bottom: 50px;
+        }
+        .month-total {
+            font-weight: bold;
+            font-size: 1.2em;
+            text-align: right;
+            padding: 15px;
+            background: var(--stat-bg);
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        .grand-total {
+            font-weight: bold;
+            font-size: 1.5em;
+            text-align: center;
+            padding: 20px;
+            background: #2c3e50;
+            color: white;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+        .calendar-header {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            background: #2c3e50;
+            color: white;
+            font-weight: bold;
+        }
+        .calendar-header div, .calendar-day {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+        .calendar-day {
+            min-height: 80px;
+            background: var(--container-bg);
+            font-size: 0.9em;
+            position: relative;
+        }
+        .calendar-day.other-month { color: #aaa; }
+        .calendar-day.has-entry {
+            background: #d5f5e3;
+            font-weight: bold;
+        }
+        .entry-detail {
+            font-size: 0.8em;
+            margin-top: 5px;
+            line-height: 1.2;
+        }
+        .entry-actions {
+            margin-top: 5px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .stat {
+            background: var(--stat-bg);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat h3 { margin-bottom: 10px; }
+        .stat p { font-size: 1.8em; font-weight: bold; color: #e74c3c; }
+        .chart-container {
+            margin: 30px 0;
+            height: 300px;
+        }
+        .no-data { text-align: center; padding: 40px; color: var(--no-data); font-style: italic; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid var(--border);
+            text-align: left;
+        }
+        th { background: var(--table-header); }
+        .amount { text-align: right; }
+        .actions { text-align: center; white-space: nowrap; }
+        .editable-input { padding: 5px; width: 80px; }
+        #login-page {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .login-box {
+            background: var(--container-bg);
+            padding: 40px;
+            border-radius: 15px;
+            width: 350px;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        #main-app { display: none; }
+    </style>
+</head>
+<body>
+
+    <!-- Login Page -->
+    <div id="login-page">
+        <div class="login-box">
+            <h2 data-lang="login_title">Milk & Water Manager Login</h2>
+            <input type="password" id="login-password" placeholder="Enter Password">
+            <button id="login-btn" data-lang="login_btn">Login</button>
+            <p id="login-error" style="color:red; margin-top:15px; display:none;" data-lang="wrong_password">Incorrect password!</p>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="main-app" class="container">
+        <header>
+            <h1 data-lang="title">Milk & Water Daily Expenses Manager</h1>
+            <div class="header-controls">
+                <div class="language-selector">
+                    <select id="language-select" onchange="changeLanguage()">
+                        <option value="en">English</option>
+                        <option value="hi">हिंदी</option>
+                        <option value="gu">ગુજરાતી</option>
+                    </select>
+                </div>
+                <div class="theme-toggle">
+                    <button onclick="toggleTheme()" data-lang="dark_mode">Dark Mode</button>
+                </div>
+            </div>
+        </header>
+
+        <section class="tabs">
+            <button class="tab-btn active" onclick="openTab('dashboard')" data-lang="Dashboard">Dashboard</button>
+            <button class="tab-btn" onclick="openTab('milk')" data-lang="add_milk">Add Milk</button>
+            <button class="tab-btn" onclick="openTab('water')" data-lang="add_water">Add Water</button>
+            <button class="tab-btn" onclick="openTab('calendar')" data-lang="calendar_view">Calendar View</button>
+            <button class="tab-btn" onclick="openTab('lists')" data-lang="list_view">List View</button>
+        </section>
+
+        <!-- Dashboard -->
+        <section id="dashboard" class="tab-content">
+            <div class="filter">
+                <div>
+                    <label data-lang="filter_month">Month:</label>
+                    <select id="dashboard-month" onchange="updateDashboard()"></select>
+                    <label data-lang="filter_year">Year:</label>
+                    <select id="dashboard-year" onchange="updateDashboard()"></select>
+                </div>
+                <div style="margin-top:10px;">
+                    <button class="pdf-btn" onclick="generateMilkPDF()" data-lang="download_milk_pdf">Download Milk Report PDF</button>
+                    <button class="pdf-btn" onclick="generateWaterPDF()" data-lang="download_water_pdf">Download Water Report PDF</button>
+                </div>
+            </div>
+
+            <div class="stats">
+                <div class="stat">
+                    <h3 data-lang="total_milk_ltr">Total Milk (Ltr)</h3>
+                    <p id="dash-milk-ltr">0</p>
+                </div>
+                <div class="stat">
+                    <h3 data-lang="milk_expense">Milk Expense</h3>
+                    <p id="dash-milk-amt">₹0</p>
+                </div>
+                <div class="stat">
+                    <h3 data-lang="total_water_btl">Total Water (Bottles)</h3>
+                    <p id="dash-water-btl">0</p>
+                </div>
+                <div class="stat">
+                    <h3 data-lang="water_expense">Water Expense</h3>
+                    <p id="dash-water-amt">₹0</p>
+                </div>
+                <div class="stat">
+                    <h3 data-lang="total_expense">Total Expense</h3>
+                    <p id="dash-total">₹0</p>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="monthlyChart"></canvas>
+            </div>
+        </section>
+
+        <!-- Add Milk -->
+        <section id="milk" class="tab-content" style="display:none;">
+            <h2 data-lang="add_milk">Add Milk Purchase</h2>
+            <form id="milk-form">
+                <input type="date" id="milk-date" required>
+                <input type="number" id="milk-qty" placeholder="Quantity (Liters)" min="0" step="0.5" required data-lang-placeholder="milk_qty_placeholder">
+                <div>
+                    <strong data-lang="milk_price">Fixed Price: ₹60 per Liter</strong>
+                    <div class="auto-amount" id="milk-total">Total: ₹0</div>
+                </div>
+                <button type="submit" data-lang="add_milk_btn">Add Milk Entry</button>
+            </form>
+        </section>
+
+        <!-- Add Water -->
+        <section id="water" class="tab-content" style="display:none;">
+            <h2 data-lang="add_water">Add Water Purchase</h2>
+            <form id="water-form">
+                <input type="date" id="water-date" required>
+                <input type="number" id="water-qty" placeholder="Quantity (Bottles)" min="1" step="1" required data-lang-placeholder="water_qty_placeholder">
+                <div>
+                    <strong data-lang="water_price">Fixed Price: ₹15 per Bottle</strong>
+                    <div class="auto-amount" id="water-total">Total: ₹0</div>
+                </div>
+                <button type="submit" data-lang="add_water_btn">Add Water Entry</button>
+            </form>
+        </section>
+
+        <!-- Calendar View -->
+        <section id="calendar" class="tab-content" style="display:none;">
+            <div class="filter">
+                <label data-lang="filter_month">Month:</label>
+                <select id="cal-month" onchange="renderCalendar()"></select>
+                <label data-lang="filter_year">Year:</label>
+                <select id="cal-year" onchange="renderCalendar()"></select>
+            </div>
+            <div id="calendar-container" class="calendar-container"></div>
+        </section>
+
+        <!-- List View -->
+        <section id="lists" class="tab-content" style="display:none;">
+            <div class="filter">
+                <label data-lang="filter_month">Month:</label>
+                <select id="list-month" onchange="renderLists()"></select>
+                <label data-lang="filter_year">Year:</label>
+                <select id="list-year" onchange="renderLists()"></select>
+            </div>
+            <h2 data-lang="milk_entries">Milk Entries</h2>
+            <div id="milk-list"></div>
+            <h2 data-lang="water_entries">Water Entries</h2>
+            <div id="water-list"></div>
+            <div id="list-grand-total" class="grand-total" style="display:none;"></div>
+        </section>
+    </div>
+
+    <script>
+        const APP_PASSWORD = "GB3";
+
+        let milkEntries = JSON.parse(localStorage.getItem('milkEntries')) || [];
+        let waterEntries = JSON.parse(localStorage.getItem('waterEntries')) || [];
+        let monthlyChart = null;
+
+        const MILK_PRICE = 60;
+        const WATER_PRICE = 15;
+
+        const translations = {
+            en: {
+                title: "Milk & Water Daily Expenses Manager",
+                login_title: "Milk & Water Manager Login",
+                login_btn: "Login",
+                wrong_password: "Incorrect password!",
+                dark_mode: "Dark Mode",
+                Dashboard: "Dashboard",
+                add_milk: "Add Milk",
+                add_water: "Add Water",
+                calendar_view: "Calendar View",
+                list_view: "List View",
+                filter_month: "Month:",
+                filter_year: "Year:",
+                all_time: "All Time",
+                total_milk_ltr: "Total Milk (Ltr)",
+                milk_expense: "Milk Expense",
+                total_water_btl: "Total Water (Bottles)",
+                water_expense: "Water Expense",
+                total_expense: "Total Expense",
+                add_milk_btn: "Add Milk Entry",
+                add_water_btn: "Add Water Entry",
+                milk_qty_placeholder: "Quantity (Liters)",
+                water_qty_placeholder: "Quantity (Bottles)",
+                milk_price: "Fixed Price: ₹60 per Liter",
+                water_price: "Fixed Price: ₹15 per Bottle",
+                milk_entries: "Milk Entries",
+                water_entries: "Water Entries",
+                month_total: "Month Total",
+                grand_total: "Grand Total (All Time)",
+                year_total: "Year Total",
+                download_milk_pdf: "Download Milk Report PDF",
+                download_water_pdf: "Download Water Report PDF",
+                edit: "Edit",
+                save: "Save",
+                cancel: "Cancel",
+                delete: "Delete",
+                confirm_delete: "Are you sure you want to delete this entry?",
+                sun: "Sun", mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat"
+            },
+            hi: {
+                edit: "संपादित करें",
+                save: "सहेजें",
+                cancel: "रद्द करें",
+                delete: "हटाएं",
+                confirm_delete: "क्या आप इस प्रविष्टि को हटाना चाहते हैं?"
+            },
+            gu: {
+                edit: "સંપાદિત કરો",
+                save: "સાચવો",
+                cancel: "રદ કરો",
+                delete: "કાઢી નાખો",
+                confirm_delete: "શું તમે આ એન્ટ્રી કાઢી નાખવા માટે ખાતરી કરો છો?"
+            }
+        };
+
+        ['hi', 'gu'].forEach(l => {
+            translations[l] = { ...translations.en, ...translations[l] };
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginBtn = document.getElementById('login-btn');
+            loginBtn.addEventListener('click', () => {
+                const password = document.getElementById('login-password').value;
+                if (password === APP_PASSWORD) {
+                    document.getElementById('login-page').style.display = 'none';
+                    document.getElementById('main-app').style.display = 'block';
+                    initApp();
+                } else {
+                    document.getElementById('login-error').style.display = 'block';
+                }
+            });
+
+            document.getElementById('login-password').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    loginBtn.click();
+                }
+            });
+        });
+
+        function changeLanguage() {
+            const lang = document.getElementById('language-select').value;
+            document.querySelectorAll('[data-lang]').forEach(el => {
+                const key = el.getAttribute('data-lang');
+                if (translations[lang][key]) el.textContent = translations[lang][key];
+            });
+            document.querySelectorAll('[data-lang-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-lang-placeholder');
+                if (translations[lang][key]) el.placeholder = translations[lang][key];
+            });
+            localStorage.setItem('preferredLanguage', lang);
+            populateYearMonthSelects();
+            renderCalendar();
+            updateDashboard();
+            renderLists();
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            const btn = document.querySelector('.theme-toggle button');
+            const lang = document.getElementById('language-select').value;
+            btn.textContent = document.body.classList.contains('dark-mode') ? 'Light Mode' : translations[lang].dark_mode;
+        }
+
+        function initApp() {
+            const today = new Date();
+            document.getElementById('milk-date').value = today.toISOString().split('T')[0];
+            document.getElementById('water-date').value = today.toISOString().split('T')[0];
+
+            populateYearMonthSelects();
+            changeLanguage();
+            updateDashboard();
+            renderCalendar();
+            renderLists();
+            openTab('dashboard');
+        }
+
+        function populateYearMonthSelects() {
+            const years = new Set();
+            const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+            [...milkEntries, ...waterEntries].forEach(e => {
+                const d = new Date(e.date);
+                years.add(d.getFullYear());
+            });
+            const currentYear = new Date().getFullYear();
+            for (let y = currentYear - 5; y <= currentYear + 1; y++) years.add(y);
+
+            const lang = document.getElementById('language-select').value;
+
+            ['dashboard', 'cal', 'list'].forEach(prefix => {
+                const yearSel = document.getElementById(prefix + '-year');
+                const monthSel = document.getElementById(prefix + '-month');
+                yearSel.innerHTML = '';
+                monthSel.innerHTML = `<option value="all">${translations[lang].all_time}</option>`;
+                Array.from(years).sort((a,b)=>b-a).forEach(y => {
+                    const opt = document.createElement('option');
+                    opt.value = y;
+                    opt.textContent = y;
+                    if (y === currentYear) opt.selected = true;
+                    yearSel.appendChild(opt);
+                });
+                months.forEach((m, i) => {
+                    const opt = document.createElement('option');
+                    opt.value = i;
+                    opt.textContent = m;
+                    if (i === new Date().getMonth()) opt.selected = true;
+                    monthSel.appendChild(opt);
+                });
+            });
+        }
+
+        document.getElementById('milk-qty').addEventListener('input', () => {
+            const qty = parseFloat(document.getElementById('milk-qty').value) || 0;
+            document.getElementById('milk-total').textContent = `Total: ₹${(qty * MILK_PRICE).toFixed(2)}`;
+        });
+        document.getElementById('water-qty').addEventListener('input', () => {
+            const qty = parseFloat(document.getElementById('water-qty').value) || 0;
+            document.getElementById('water-total').textContent = `Total: ₹${(qty * WATER_PRICE).toFixed(2)}`;
+        });
+
+        document.getElementById('milk-form').addEventListener('submit', e => {
+            e.preventDefault();
+            const qty = parseFloat(document.getElementById('milk-qty').value);
+            milkEntries.push({
+                date: document.getElementById('milk-date').value,
+                qty: qty,
+                amount: qty * MILK_PRICE
+            });
+            localStorage.setItem('milkEntries', JSON.stringify(milkEntries));
+            e.target.reset();
+            document.getElementById('milk-total').textContent = 'Total: ₹0';
+            populateYearMonthSelects();
+            updateDashboard();
+            renderCalendar();
+            renderLists();
+        });
+
+        document.getElementById('water-form').addEventListener('submit', e => {
+            e.preventDefault();
+            const qty = parseFloat(document.getElementById('water-qty').value);
+            waterEntries.push({
+                date: document.getElementById('water-date').value,
+                qty: qty,
+                amount: qty * WATER_PRICE
+            });
+            localStorage.setItem('waterEntries', JSON.stringify(waterEntries));
+            e.target.reset();
+            document.getElementById('water-total').textContent = 'Total: ₹0';
+            populateYearMonthSelects();
+            updateDashboard();
+            renderCalendar();
+            renderLists();
+        });
+
+        function getFilteredEntries(month, year) {
+            const isAllMonth = month === 'all';
+            const isAllYear = year === 'all';
+
+            const filterFunc = e => {
+                const d = new Date(e.date);
+                const matchMonth = isAllMonth || d.getMonth() === month;
+                const matchYear = isAllYear || d.getFullYear() === year;
+                return matchMonth && matchYear;
+            };
+
+            return {
+                milk: milkEntries.filter(filterFunc),
+                water: waterEntries.filter(filterFunc)
+            };
+        }
+
+        function updateDashboard() {
+            const month = document.getElementById('dashboard-month').value;
+            const year = document.getElementById('dashboard-year').value;
+            const { milk, water } = getFilteredEntries(month === 'all' ? 'all' : parseInt(month), year === 'all' ? 'all' : parseInt(year));
+
+            const milkLtr = milk.reduce((s, e) => s + e.qty, 0);
+            const milkAmt = milk.reduce((s, e) => s + e.amount, 0);
+            const waterBtl = water.reduce((s, e) => s + e.qty, 0);
+            const waterAmt = water.reduce((s, e) => s + e.amount, 0);
+
+            document.getElementById('dash-milk-ltr').textContent = milkLtr.toFixed(1);
+            document.getElementById('dash-milk-amt').textContent = `₹${milkAmt.toFixed(2)}`;
+            document.getElementById('dash-water-btl').textContent = waterBtl;
+            document.getElementById('dash-water-amt').textContent = `₹${waterAmt.toFixed(2)}`;
+            document.getElementById('dash-total').textContent = `₹${(milkAmt + waterAmt).toFixed(2)}`;
+
+            if (monthlyChart) monthlyChart.destroy();
+            monthlyChart = new Chart(document.getElementById('monthlyChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Milk', 'Water'],
+                    datasets: [{
+                        label: 'Expense (₹)',
+                        data: [milkAmt, waterAmt],
+                        backgroundColor: ['#3498db', '#e74c3c']
+                    }]
+                },
+                options: { responsive: true, scales: { y: { beginAtZero: true } } }
+            });
+        }
+
+        function generateMilkPDF() {
+            const month = document.getElementById('dashboard-month').value;
+            const year = document.getElementById('dashboard-year').value;
+            const { milk } = getFilteredEntries(month === 'all' ? 'all' : parseInt(month), year === 'all' ? 'all' : parseInt(year));
+
+            const period = month === 'all' && year === 'all' ? 'All Time' : 
+                          month === 'all' ? year : 
+                          `${new Date(2020, parseInt(month)).toLocaleString('default', { month: 'long' })} ${year}`;
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.setFontSize(20);
+            doc.text('Milk Expenses Report', 105, 20, { align: 'center' });
+            doc.setFontSize(14);
+            doc.text(`Period: ${period}`, 105, 30, { align: 'center' });
+
+            const tableData = milk.map(e => [e.date, e.qty.toFixed(1) + ' Ltr', 'Rs' + e.amount.toFixed(2)]);
+            const totalLtr = milk.reduce((s, e) => s + e.qty, 0);
+            const totalAmt = milk.reduce((s, e) => s + e.amount, 0);
+
+            doc.autoTable({
+                head: [['Date', 'Quantity', 'Amount']],
+                body: tableData,
+                startY: 40,
+                theme: 'grid'
+            });
+
+            doc.setFontSize(14);
+            doc.text(`Total: ${totalLtr.toFixed(1)} Ltr   Rs${totalAmt.toFixed(2)}`, 14, doc.lastAutoTable.finalY + 10);
+
+            doc.save(`Milk_Report_${period.replace(/ /g, '_')}.pdf`);
+        }
+
+        function generateWaterPDF() {
+            const month = document.getElementById('dashboard-month').value;
+            const year = document.getElementById('dashboard-year').value;
+            const { water } = getFilteredEntries(month === 'all' ? 'all' : parseInt(month), year === 'all' ? 'all' : parseInt(year));
+
+            const period = month === 'all' && year === 'all' ? 'All Time' : 
+                          month === 'all' ? year : 
+                          `${new Date(2020, parseInt(month)).toLocaleString('default', { month: 'long' })} ${year}`;
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.setFontSize(20);
+            doc.text('Water Expenses Report', 105, 20, { align: 'center' });
+            doc.setFontSize(14);
+            doc.text(`Period: ${period}`, 105, 30, { align: 'center' });
+
+            const tableData = water.map(e => [e.date, e.qty + ' Bottles', 'Rs' + e.amount.toFixed(2)]);
+            const totalBtl = water.reduce((s, e) => s + e.qty, 0);
+            const totalAmt = water.reduce((s, e) => s + e.amount, 0);
+
+            doc.autoTable({
+                head: [['Date', 'Quantity', 'Amount']],
+                body: tableData,
+                startY: 40,
+                theme: 'grid'
+            });
+
+            doc.setFontSize(14);
+            doc.text(`Total: ${totalBtl} Bottles   Rs${totalAmt.toFixed(2)}`, 14, doc.lastAutoTable.finalY + 10);
+
+            doc.save(`Water_Report_${period.replace(/ /g, '_')}.pdf`);
+        }
+
+        function renderCalendar() {
+            const monthSel = document.getElementById('cal-month').value;
+            const yearSel = document.getElementById('cal-year').value;
+            const container = document.getElementById('calendar-container');
+            container.innerHTML = '';
+
+            const lang = document.getElementById('language-select').value;
+
+            let entriesList = [];
+            let grandTotal = 0;
+
+            if (monthSel === 'all' && yearSel === 'all') {
+                entriesList = [...milkEntries, ...waterEntries].map((e, i) => ({
+                    entry: e,
+                    type: milkEntries.includes(e) ? 'milk' : 'water',
+                    index: milkEntries.includes(e) ? milkEntries.indexOf(e) : waterEntries.indexOf(e)
+                }));
+                grandTotal = entriesList.reduce((s, item) => s + item.entry.amount, 0);
+            } else if (monthSel === 'all') {
+                const year = parseInt(yearSel);
+                entriesList = [...milkEntries, ...waterEntries].filter(e => new Date(e.date).getFullYear() === year).map((e, i) => ({
+                    entry: e,
+                    type: milkEntries.includes(e) ? 'milk' : 'water',
+                    index: milkEntries.includes(e) ? milkEntries.indexOf(e) : waterEntries.indexOf(e)
+                }));
+                grandTotal = entriesList.reduce((s, item) => s + item.entry.amount, 0);
+            } else {
+                const month = parseInt(monthSel);
+                const year = parseInt(yearSel);
+                entriesList = [...milkEntries, ...waterEntries].filter(e => new Date(e.date).getFullYear() === year && new Date(e.date).getMonth() === month).map((e, i) => ({
+                    entry: e,
+                    type: milkEntries.includes(e) ? 'milk' : 'water',
+                    index: milkEntries.includes(e) ? milkEntries.indexOf(e) : waterEntries.indexOf(e)
+                }));
+                grandTotal = entriesList.reduce((s, item) => s + item.entry.amount, 0);
+            }
+
+            const grouped = {};
+            entriesList.forEach(item => {
+                const d = new Date(item.entry.date);
+                const key = `${d.getFullYear()}-${d.getMonth()}`;
+                if (!grouped[key]) grouped[key] = { entries: [], total: 0 };
+                grouped[key].entries.push(item);
+                grouped[key].total += item.entry.amount;
+            });
+
+            Object.keys(grouped).sort((a,b) => b.localeCompare(a)).forEach(key => {
+                const [y, m] = key.split('-').map(Number);
+                renderSingleMonthCalendar(container, m, y, grouped[key].entries, grouped[key].total);
+            });
+
+            if (grandTotal > 0 && (monthSel === 'all' || yearSel === 'all')) {
+                const grand = document.createElement('div');
+                grand.className = 'grand-total';
+                grand.textContent = `${translations[lang].grand_total}: ₹${grandTotal.toFixed(2)}`;
+                container.appendChild(grand);
+            }
+        }
+
+        function renderSingleMonthCalendar(container, month, year, entriesList, monthTotal) {
+            const lang = document.getElementById('language-select').value;
+            const monthName = new Date(year, month).toLocaleString('default', { month: 'long', year: 'numeric' });
+
+            const monthDiv = document.createElement('div');
+            monthDiv.className = 'month-calendar';
+            monthDiv.innerHTML = `<h2>${monthName}</h2>`;
+
+            const header = document.createElement('div');
+            header.className = 'calendar-header';
+            ['sun','mon','tue','wed','thu','fri','sat'].forEach(day => {
+                const div = document.createElement('div');
+                div.textContent = translations[lang][day];
+                header.appendChild(div);
+            });
+            monthDiv.appendChild(header);
+
+            const grid = document.createElement('div');
+            grid.className = 'calendar-grid';
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            const dayEntries = {};
+            entriesList.forEach(item => {
+                const d = new Date(item.entry.date);
+                const day = d.getDate();
+                if (!dayEntries[day]) dayEntries[day] = [];
+                dayEntries[day].push(item);
+            });
+
+            for (let i = 0; i < firstDay; i++) {
+                const empty = document.createElement('div');
+                empty.className = 'calendar-day other-month';
+                grid.appendChild(empty);
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const div = document.createElement('div');
+                div.className = 'calendar-day';
+                if (dayEntries[day]) div.classList.add('has-entry');
+                div.innerHTML = `<strong>${day}</strong>`;
+                if (dayEntries[day]) {
+                    const detail = document.createElement('div');
+                    detail.className = 'entry-detail';
+                    let milkQty = 0, waterQty = 0;
+                    dayEntries[day].forEach(item => {
+                        if (item.type === 'milk') milkQty += item.entry.qty;
+                        else waterQty += item.entry.qty;
+                    });
+                    if (milkQty > 0) detail.innerHTML += `Milk: <span class="qty-display">${milkQty}</span> L<br>`;
+                    if (waterQty > 0) detail.innerHTML += `Water: <span class="qty-display">${waterQty}</span> Btl<br>`;
+
+                    const actions = document.createElement('div');
+                    actions.className = 'entry-actions';
+                    dayEntries[day].forEach(item => {
+                        const actionRow = document.createElement('div');
+                        actionRow.style.display = 'flex';
+                        actionRow.style.gap = '5px';
+                        actionRow.style.alignItems = 'center';
+                        actionRow.style.flexWrap = 'wrap';
+
+                        const qtySpan = document.createElement('span');
+                        qtySpan.className = 'qty-display';
+                        qtySpan.textContent = item.entry.qty;
+                        actionRow.appendChild(qtySpan);
+                        actionRow.appendChild(document.createTextNode(item.type === 'milk' ? ' L' : ' Btl'));
+
+                        const editBtn = document.createElement('button');
+                        editBtn.className = 'edit-btn';
+                        editBtn.textContent = translations[lang].edit;
+                        actionRow.appendChild(editBtn);
+
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.className = 'delete-btn';
+                        deleteBtn.textContent = translations[lang].delete;
+                        actionRow.appendChild(deleteBtn);
+
+                        actions.appendChild(actionRow);
+
+                        // Edit functionality
+                        editBtn.onclick = function() {
+                            const input = document.createElement('input');
+                            input.type = 'number';
+                            input.value = item.entry.qty;
+                            input.step = item.type === 'milk' ? '0.5' : '1';
+                            input.min = '0';
+                            input.className = 'editable-input';
+
+                            qtySpan.style.display = 'none';
+                            actionRow.insertBefore(input, qtySpan.nextSibling);
+
+                            this.textContent = translations[lang].save;
+                            this.className = 'save-btn';
+                            this.onclick = function() {
+                                saveCalendarEntry(item.index, item.type, input.value);
+                            };
+
+                            const cancelBtn = document.createElement('button');
+                            cancelBtn.className = 'cancel-btn';
+                            cancelBtn.textContent = translations[lang].cancel;
+                            cancelBtn.onclick = () => renderCalendar();
+                            actionRow.insertBefore(cancelBtn, deleteBtn);
+
+                            deleteBtn.style.display = 'none';
+                        };
+
+                        // Delete functionality
+                        deleteBtn.onclick = () => {
+                            if (confirm(translations[lang].confirm_delete)) {
+                                deleteCalendarEntry(item.index, item.type);
+                            }
+                        };
+                    });
+                    detail.appendChild(actions);
+                    div.appendChild(detail);
+                }
+                grid.appendChild(div);
+            }
+
+            monthDiv.appendChild(grid);
+
+            if (monthTotal > 0) {
+                const totalDiv = document.createElement('div');
+                totalDiv.className = 'month-total';
+                totalDiv.textContent = `${translations[lang].month_total}: ₹${monthTotal.toFixed(2)}`;
+                monthDiv.appendChild(totalDiv);
+            }
+
+            container.appendChild(monthDiv);
+        }
+
+        function saveCalendarEntry(index, type, newQtyStr) {
+            const newQty = parseFloat(newQtyStr);
+            if (isNaN(newQty) || newQty < 0) {
+                alert('Invalid quantity');
+                return;
+            }
+            const entries = type === 'milk' ? milkEntries : waterEntries;
+            entries[index].qty = newQty;
+            entries[index].amount = newQty * (type === 'milk' ? MILK_PRICE : WATER_PRICE);
+            localStorage.setItem(type === 'milk' ? 'milkEntries' : 'waterEntries', JSON.stringify(entries));
+            renderCalendar();
+            renderLists();
+            updateDashboard();
+        }
+
+        function deleteCalendarEntry(index, type) {
+            const entries = type === 'milk' ? milkEntries : waterEntries;
+            entries.splice(index, 1);
+            localStorage.setItem(type === 'milk' ? 'milkEntries' : 'waterEntries', JSON.stringify(entries));
+            renderCalendar();
+            renderLists();
+            updateDashboard();
+        }
+
+        function renderLists() {
+            const month = document.getElementById('list-month').value;
+            const year = document.getElementById('list-year').value;
+            const { milk, water } = getFilteredEntries(month === 'all' ? 'all' : parseInt(month), year === 'all' ? 'all' : parseInt(year));
+
+            const lang = document.getElementById('language-select').value;
+
+            const renderTable = (containerId, data, type) => {
+                const container = document.getElementById(containerId);
+                container.innerHTML = '';
+                if (data.length === 0) {
+                    container.innerHTML = '<div class="no-data">No entries</div>';
+                    return;
+                }
+                const table = document.createElement('table');
+                table.innerHTML = `<thead><tr><th>Date</th><th>Quantity</th><th>Amount</th><th class="actions">Actions</th></tr></thead><tbody></tbody>`;
+                const tbody = table.querySelector('tbody');
+                let total = 0;
+                data.forEach(e => {
+                    const row = document.createElement('tr');
+                    const index = type === 'milk' ? milkEntries.indexOf(e) : waterEntries.indexOf(e);
+                    row.innerHTML = `
+                        <td>${e.date}</td>
+                        <td><span class="qty-display">${e.qty}</span> ${type === 'milk' ? 'Ltr' : 'Bottles'}</td>
+                        <td class="amount">₹${e.amount.toFixed(2)}</td>
+                        <td class="actions">
+                            <button class="edit-btn">${translations[lang].edit}</button>
+                            <button class="delete-btn">${translations[lang].delete}</button>
+                        </td>
+                    `;
+                    const actionsCell = row.querySelector('.actions');
+                    const editBtn = actionsCell.querySelector('.edit-btn');
+                    editBtn.onclick = function() {
+                        const qtyCell = row.cells[1];
+                        const qtySpan = qtyCell.querySelector('.qty-display');
+                        const input = document.createElement('input');
+                        input.type = 'number';
+                        input.value = qtySpan.textContent;
+                        input.step = type === 'milk' ? '0.5' : '1';
+                        input.min = '0';
+                        input.className = 'editable-input';
+                        qtySpan.style.display = 'none';
+                        qtyCell.insertBefore(input, qtySpan.nextSibling);
+
+                        this.textContent = translations[lang].save;
+                        this.className = 'save-btn';
+                        this.onclick = function() {
+                            saveListEntry(index, type, input.value);
+                        };
+
+                        const cancelBtn = document.createElement('button');
+                        cancelBtn.className = 'cancel-btn';
+                        cancelBtn.textContent = translations[lang].cancel;
+                        cancelBtn.onclick = () => renderLists();
+                        actionsCell.appendChild(cancelBtn);
+
+                        const deleteBtn = actionsCell.querySelector('.delete-btn');
+                        deleteBtn.style.display = 'none';
+                    };
+
+                    const deleteBtn = actionsCell.querySelector('.delete-btn');
+                    deleteBtn.onclick = () => {
+                        if (confirm(translations[lang].confirm_delete)) {
+                            deleteListEntry(index, type);
+                        }
+                    };
+
+                    tbody.appendChild(row);
+                    total += e.amount;
+                });
+                container.appendChild(table);
+                if (total > 0) {
+                    const totalRow = document.createElement('div');
+                    totalRow.className = 'month-total';
+                    totalRow.textContent = `${translations[lang].month_total}: ₹${total.toFixed(2)}`;
+                    container.appendChild(totalRow);
+                }
+            };
+
+            renderTable('milk-list', milk, 'milk');
+            renderTable('water-list', water, 'water');
+
+            const grandDiv = document.getElementById('list-grand-total');
+            const allTotal = milk.reduce((s, e) => s + e.amount, 0) + water.reduce((s, e) => s + e.amount, 0);
+            if (allTotal > 0) {
+                let text = translations[lang].grand_total;
+                if (month !== 'all' && year !== 'all') {
+                    text = translations[lang].month_total;
+                } else if (month === 'all' && year !== 'all') {
+                    text = `${translations[lang].year_total} (${year})`;
+                }
+                grandDiv.textContent = `${text}: ₹${allTotal.toFixed(2)}`;
+                grandDiv.style.display = 'block';
+            } else {
+                grandDiv.style.display = 'none';
+            }
+        }
+
+        function saveListEntry(index, type, newQtyStr) {
+            const newQty = parseFloat(newQtyStr);
+            if (isNaN(newQty) || newQty < 0) {
+                alert('Invalid quantity');
+                return;
+            }
+            const entries = type === 'milk' ? milkEntries : waterEntries;
+            entries[index].qty = newQty;
+            entries[index].amount = newQty * (type === 'milk' ? MILK_PRICE : WATER_PRICE);
+            localStorage.setItem(type === 'milk' ? 'milkEntries' : 'waterEntries', JSON.stringify(entries));
+            renderLists();
+            renderCalendar();
+            updateDashboard();
+        }
+
+        function deleteListEntry(index, type) {
+            const entries = type === 'milk' ? milkEntries : waterEntries;
+            entries.splice(index, 1);
+            localStorage.setItem(type === 'milk' ? 'milkEntries' : 'waterEntries', JSON.stringify(entries));
+            renderLists();
+            renderCalendar();
+            updateDashboard();
+        }
+
+        function openTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabName).style.display = 'block';
+            document.querySelector(`.tab-btn[onclick="openTab('${tabName}')"]`).classList.add('active');
+
+            if (tabName === 'dashboard') updateDashboard();
+            if (tabName === 'calendar') renderCalendar();
+            if (tabName === 'lists') renderLists();
+        }
+    </script>
+</body>
+</html>
