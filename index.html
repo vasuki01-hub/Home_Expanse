@@ -70,7 +70,7 @@
             background: var(--container-bg);
             color: var(--text);
         }
-        button { background: #3498db; color: white; cursor: pointer; }
+        button { margin-top: 16px; background: #3498db; color: white; cursor: pointer; }
         button:hover { background: #2980b9; }
         .pdf-btn { background: #e74c3c; margin-left: 10px; }
         .edit-btn { background: #f39c12; font-size: 0.8em; padding: 4px 8px; margin: 2px; }
@@ -78,10 +78,11 @@
         .save-btn { background: #27ae60; }
         .cancel-btn { background: #95a5a6; }
         h2 {
-            background: #d35400;
+            font-size: medium;
+            background: #000000;
             color: white;
             padding: 12px;
-            border-radius: 8px;
+            border-radius: 30px;
             margin: 30px 0 20px;
             text-align: center;
         }
@@ -113,8 +114,8 @@
         }
         input, select {
             padding: 12px;
-            border: 1px solid var(--input-border);
-            border-radius: 5px;
+            border: 5px solid var(--input-border);
+            border-radius: 30px;
             width: 100%;
         }
         .auto-amount {
@@ -231,7 +232,7 @@
         #login-page {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9);
+            background: #dfe3f3;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -240,7 +241,7 @@
         .login-box {
             background: var(--container-bg);
             padding: 40px;
-            border-radius: 15px;
+            border-radius: 30px;
             width: 350px;
             text-align: center;
             box-shadow: 0 0 20px rgba(0,0,0,0.5);
@@ -385,7 +386,7 @@
     </div>
 
     <script>
-        const APP_PASSWORD = "GB3";
+        const APP_PASSWORD = "MWE";
 
         let milkEntries = JSON.parse(localStorage.getItem('milkEntries')) || [];
         let waterEntries = JSON.parse(localStorage.getItem('waterEntries')) || [];
