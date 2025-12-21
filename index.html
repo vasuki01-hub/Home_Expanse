@@ -59,7 +59,7 @@
         }
         h1 { color: var(--heading); margin-bottom: 10px; }
         .header-controls {
-            position: absolute;
+            position: relative;
             top: 0;
             right: 0;
             display: flex;
@@ -73,7 +73,7 @@
             background: var(--container-bg);
             color: var(--text);
         }
-        button { margin-top: 16px; background: #3498db; color: white; cursor: pointer; }
+        button { margin-top: 0px; background: #3498db; color: white; cursor: pointer; }
         button:hover { background: #2980b9; }
         .pdf-btn { background: #e74c3c; margin-left: 10px; }
         .edit-btn { background: #f39c12; font-size: 0.8em; padding: 4px 8px; margin: 2px; }
@@ -230,6 +230,13 @@
             margin: 10px 0;
             color: #27ae60;
         }
+        .logout-btn {
+            background: #e74c3c;
+            margin-top: 0;
+        }
+        .logout-btn:hover {
+            background: #c0392b;
+        }
     </style>
 </head>
 <body>
@@ -238,6 +245,7 @@
     <div id="login-page">
         <div class="login-box">
             <h2 data-lang="login_title">Milk & Water Manager Login</h2>
+            <input type="email" id="login-email" placeholder="Enter Email (optional)" style="margin-bottom: 10px;">
             <input type="password" id="login-password" placeholder="Enter Password">
             <button id="login-btn" data-lang="login_btn">Login</button>
             <p id="login-error" style="color:red; margin-top:15px; display:none;" data-lang="wrong_password">Incorrect password!</p>
@@ -259,6 +267,7 @@
                 <div class="theme-toggle">
                     <button onclick="toggleTheme()" data-lang="dark_mode">Dark Mode</button>
                 </div>
+                <button id="logout-btn" class="logout-btn" style="display:none;">Logout</button>
             </div>
         </header>
 
@@ -551,7 +560,24 @@
             }
         }
 
+        // Check if already logged in on page load/refresh
         document.addEventListener('DOMContentLoaded', () => {
+            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+            const loginPage = document.getElementById('login-page');
+            const mainApp = document.getElementById('main-app');
+            const logoutBtn = document.getElementById('logout-btn');
+
+            if (isLoggedIn) {
+                loginPage.style.display = 'none';
+                mainApp.style.display = 'block';
+                logoutBtn.style.display = 'block';
+                loadData();
+            } else {
+                loginPage.style.display = 'flex';
+                mainApp.style.display = 'none';
+                logoutBtn.style.display = 'none';
+            }
+
             const loginBtn = document.getElementById('login-btn');
             const passwordInput = document.getElementById('login-password');
             const errorMsg = document.getElementById('login-error');
@@ -559,8 +585,10 @@
             loginBtn.addEventListener('click', () => {
                 const password = passwordInput.value.trim();
                 if (password === APP_PASSWORD) {
-                    document.getElementById('login-page').style.display = 'none';
-                    document.getElementById('main-app').style.display = 'block';
+                    localStorage.setItem('isLoggedIn', 'true');
+                    loginPage.style.display = 'none';
+                    mainApp.style.display = 'block';
+                    logoutBtn.style.display = 'block';
                     loadData();
                 } else {
                     errorMsg.style.display = 'block';
@@ -571,6 +599,17 @@
                 if (e.key === 'Enter') {
                     loginBtn.click();
                 }
+            });
+
+            // Logout button
+            logoutBtn.addEventListener('click', () => {
+                localStorage.removeItem('isLoggedIn');
+                loginPage.style.display = 'flex';
+                mainApp.style.display = 'none';
+                logoutBtn.style.display = 'none';
+                // Optionally clear data if you want
+                milkEntries = [];
+                waterEntries = [];
             });
         });
 
@@ -729,7 +768,7 @@
             doc.setFontSize(14);
             doc.text(`Period: ${period}`, 105, 30, { align: 'center' });
 
-            const tableData = milk.map(e => [e.date, e.qty.toFixed(1) + ' Ltr', '₹' + e.amount.toFixed(2)]);
+            const tableData = milk.map(e => [e.date, e.qty.toFixed(1) + ' Ltr', 'Rs ' + e.amount.toFixed(2)]);
             const totalLtr = milk.reduce((s, e) => s + e.qty, 0);
             const totalAmt = milk.reduce((s, e) => s + e.amount, 0);
 
@@ -741,7 +780,7 @@
             });
 
             doc.setFontSize(14);
-            doc.text(`Total: ${totalLtr.toFixed(1)} Ltr   ₹${totalAmt.toFixed(2)}`, 14, doc.lastAutoTable.finalY + 10);
+            doc.text(`Total: ${totalLtr.toFixed(1)} Ltr   Rs ${totalAmt.toFixed(2)}`, 14, doc.lastAutoTable.finalY + 10);
 
             doc.save(`Milk_Report_${period.replace(/ /g, '_')}.pdf`);
         }
@@ -762,7 +801,7 @@
             doc.setFontSize(14);
             doc.text(`Period: ${period}`, 105, 30, { align: 'center' });
 
-            const tableData = water.map(e => [e.date, e.qty + ' Bottles', '₹' + e.amount.toFixed(2)]);
+            const tableData = water.map(e => [e.date, e.qty + ' Bottles', 'Rs ' + e.amount.toFixed(2)]);
             const totalBtl = water.reduce((s, e) => s + e.qty, 0);
             const totalAmt = water.reduce((s, e) => s + e.amount, 0);
 
@@ -774,7 +813,7 @@
             });
 
             doc.setFontSize(14);
-            doc.text(`Total: ${totalBtl} Bottles   ₹${totalAmt.toFixed(2)}`, 14, doc.lastAutoTable.finalY + 10);
+            doc.text(`Total: ${totalBtl} Bottles   Rs ${totalAmt.toFixed(2)}`, 14, doc.lastAutoTable.finalY + 10);
 
             doc.save(`Water_Report_${period.replace(/ /g, '_')}.pdf`);
         }
@@ -1167,4 +1206,3 @@
     </script>
 </body>
 </html>
-
