@@ -56,7 +56,7 @@
         }
         h1 { color: var(--heading); margin-bottom: 10px; }
         .header-controls {
-            position: absolute;
+            position: relative;
             top: 0;
             right: 0;
             display: flex;
@@ -182,7 +182,6 @@
         }
         .calendar-day.other-month { color: #aaa; }
         .calendar-day.has-entry {
-            background: #d5f5e3;
             font-weight: bold;
         }
         .entry-detail {
@@ -436,21 +435,86 @@
                 sun: "Sun", mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat"
             },
             hi: {
+                title: "दूध और पानी दैनिक खर्च प्रबंधक",
+                login_title: "दूध और पानी प्रबंधक लॉगिन",
+                login_btn: "लॉगिन करें",
+                wrong_password: "गलत पासवर्ड!",
+                dark_mode: "डार्क मोड",
+                Dashboard: "डैशबोर्ड",
+                add_milk: "दूध जोड़ें",
+                add_water: "पानी जोड़ें",
+                calendar_view: "कैलेंडर दृश्य",
+                list_view: "सूची दृश्य",
+                filter_month: "माह:",
+                filter_year: "वर्ष:",
+                all_time: "सभी समय",
+                total_milk_ltr: "कुल दूध (लीटर)",
+                milk_expense: "दूध का खर्च",
+                total_water_btl: "कुल पानी (बोतलें)",
+                water_expense: "पानी का खर्च",
+                total_expense: "कुल खर्च",
+                add_milk_btn: "दूध प्रविष्टि जोड़ें",
+                add_water_btn: "पानी प्रविष्टि जोड़ें",
+                milk_qty_placeholder: "मात्रा (लीटर)",
+                water_qty_placeholder: "मात्रा (बोतलें)",
+                milk_price: "निश्चित मूल्य: ₹60 प्रति लीटर",
+                water_price: "निश्चित मूल्य: ₹15 प्रति बोतल",
+                milk_entries: "दूध प्रविष्टियाँ",
+                water_entries: "पानी प्रविष्टियाँ",
+                month_total: "माह का कुल",
+                grand_total: "कुल योग (सभी समय)",
+                year_total: "वर्ष का कुल",
+                download_milk_pdf: "दूध रिपोर्ट PDF डाउनलोड करें",
+                download_water_pdf: "पानी रिपोर्ट PDF डाउनलोड करें",
                 edit: "संपादित करें",
                 save: "सहेजें",
                 cancel: "रद्द करें",
                 delete: "हटाएं",
-                confirm_delete: "क्या आप इस प्रविष्टि को हटाना चाहते हैं?"
+                confirm_delete: "क्या आप इस प्रविष्टि को हटाना चाहते हैं?",
+                sun: "रवि", mon: "सोम", tue: "मंगल", wed: "बुध", thu: "गुरु", fri: "शुक्र", sat: "शनि"
             },
             gu: {
+                title: "દૂધ અને પાણી દૈનિક ખર્ચ મેનેજર",
+                login_title: "દૂધ અને પાણી મેનેજર લોગિન",
+                login_btn: "લોગિન",
+                wrong_password: "ખોટો પાસવર્ડ!",
+                dark_mode: "ડાર્ક મોડ",
+                Dashboard: "ડૅશબોર્ડ",
+                add_milk: "દૂધ ઉમેરો",
+                add_water: "પાણી ઉમેરો",
+                calendar_view: "કૅલેન્ડર દૃશ્ય",
+                list_view: "યાદી દૃશ્ય",
+                filter_month: "મહિનો:",
+                filter_year: "વર્ષ:",
+                all_time: "બધો સમય",
+                total_milk_ltr: "કુલ દૂધ (લિટર)",
+                milk_expense: "દૂધનો ખર્ચ",
+                total_water_btl: "કુલ પાણી (બોટલ)",
+                water_expense: "પાણીનો ખર્ચ",
+                total_expense: "કુલ ખર્ચ",
+                add_milk_btn: "દૂધ એન્ટ્રી ઉમેરો",
+                add_water_btn: "પાણી એન્ટ્રી ઉમેરો",
+                milk_qty_placeholder: "જથ્થો (લિટર)",
+                water_qty_placeholder: "જથ્થો (બોટલ)",
+                milk_price: "નિશ્ચિત કિંમત: ₹60 પ્રતિ લિટર",
+                water_price: "નિશ્ચિત કિંમત: ₹15 પ્રતિ બોટલ",
+                milk_entries: "દૂધ એન્ટ્રીઓ",
+                water_entries: "પાણી એન્ટ્રીઓ",
+                month_total: "મહિનાનો કુલ",
+                grand_total: "કુલ યોગ (બધો સમય)",
+                year_total: "વર્ષનો કુલ",
+                download_milk_pdf: "દૂધ રિપોર્ટ PDF ડાઉનલોડ કરો",
+                download_water_pdf: "પાણી રિપોર્ટ PDF ડાઉનલોડ કરો",
                 edit: "સંપાદિત કરો",
                 save: "સાચવો",
                 cancel: "રદ કરો",
                 delete: "કાઢી નાખો",
-                confirm_delete: "શું તમે આ એન્ટ્રી કાઢી નાખવા માટે ખાતરી કરો છો?"
+                confirm_delete: "શું તમે આ એન્ટ્રી કાઢી નાખવા માટે ખાતરી કરો છો?",
+                sun: "રવિ", mon: "સોમ", tue: "મંગળ", wed: "બુધ", thu: "ગુરુ", fri: "શુક્ર", sat: "શનિ"
             }
         };
 
+        // Merge English as fallback
         ['hi', 'gu'].forEach(l => {
             translations[l] = { ...translations.en, ...translations[l] };
         });
@@ -477,6 +541,9 @@
 
         function changeLanguage() {
             const lang = document.getElementById('language-select').value;
+            localStorage.setItem('preferredLanguage', lang);
+
+            // Update static elements
             document.querySelectorAll('[data-lang]').forEach(el => {
                 const key = el.getAttribute('data-lang');
                 if (translations[lang][key]) el.textContent = translations[lang][key];
@@ -485,18 +552,36 @@
                 const key = el.getAttribute('data-lang-placeholder');
                 if (translations[lang][key]) el.placeholder = translations[lang][key];
             });
-            localStorage.setItem('preferredLanguage', lang);
+
+            // Update dark mode button
+            const themeBtn = document.querySelector('.theme-toggle button');
+            themeBtn.textContent = document.body.classList.contains('dark-mode') ? 
+                (lang === 'en' ? 'Light Mode' : lang === 'hi' ? 'लाइट मोड' : 'લાઇટ મોડ') : 
+                translations[lang].dark_mode;
+
             populateYearMonthSelects();
-            renderCalendar();
             updateDashboard();
+            renderCalendar();
             renderLists();
+        }
+
+        function updateDynamicTranslations() {
+            const lang = document.getElementById('language-select').value;
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                if (!btn.classList.contains('save-btn')) btn.textContent = translations[lang].edit;
+            });
+            document.querySelectorAll('.delete-btn').forEach(btn => btn.textContent = translations[lang].delete);
+            document.querySelectorAll('.save-btn').forEach(btn => btn.textContent = translations[lang].save);
+            document.querySelectorAll('.cancel-btn').forEach(btn => btn.textContent = translations[lang].cancel);
         }
 
         function toggleTheme() {
             document.body.classList.toggle('dark-mode');
-            const btn = document.querySelector('.theme-toggle button');
             const lang = document.getElementById('language-select').value;
-            btn.textContent = document.body.classList.contains('dark-mode') ? 'Light Mode' : translations[lang].dark_mode;
+            const themeBtn = document.querySelector('.theme-toggle button');
+            themeBtn.textContent = document.body.classList.contains('dark-mode') ? 
+                (lang === 'en' ? 'Light Mode' : lang === 'hi' ? 'लाइट मोड' : 'લાઇટ મોડ') : 
+                translations[lang].dark_mode;
         }
 
         function initApp() {
@@ -504,11 +589,11 @@
             document.getElementById('milk-date').value = today.toISOString().split('T')[0];
             document.getElementById('water-date').value = today.toISOString().split('T')[0];
 
+            const savedLang = localStorage.getItem('preferredLanguage') || 'en';
+            document.getElementById('language-select').value = savedLang;
+
             populateYearMonthSelects();
             changeLanguage();
-            updateDashboard();
-            renderCalendar();
-            renderLists();
             openTab('dashboard');
         }
 
@@ -760,6 +845,8 @@
                 grand.textContent = `${translations[lang].grand_total}: ₹${grandTotal.toFixed(2)}`;
                 container.appendChild(grand);
             }
+
+            updateDynamicTranslations(); // Important: translate dynamic buttons
         }
 
         function renderSingleMonthCalendar(container, month, year, entriesList, monthTotal) {
@@ -842,7 +929,6 @@
 
                         actions.appendChild(actionRow);
 
-                        // Edit functionality
                         editBtn.onclick = function() {
                             const input = document.createElement('input');
                             input.type = 'number';
@@ -869,7 +955,6 @@
                             deleteBtn.style.display = 'none';
                         };
 
-                        // Delete functionality
                         deleteBtn.onclick = () => {
                             if (confirm(translations[lang].confirm_delete)) {
                                 deleteCalendarEntry(item.index, item.type);
@@ -1014,6 +1099,8 @@
             } else {
                 grandDiv.style.display = 'none';
             }
+
+            updateDynamicTranslations(); // Translate dynamic buttons in list view
         }
 
         function saveListEntry(index, type, newQtyStr) {
