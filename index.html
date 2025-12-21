@@ -7,6 +7,9 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <!-- Firebase Compat SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <style>
         :root {
             --bg: #f4f6f9;
@@ -56,7 +59,7 @@
         }
         h1 { color: var(--heading); margin-bottom: 10px; }
         .header-controls {
-            position: relative;
+            position: absolute;
             top: 0;
             right: 0;
             display: flex;
@@ -133,12 +136,8 @@
             flex-wrap: wrap;
             align-items: center;
         }
-        .calendar-container {
-            margin-top: 20px;
-        }
-        .month-calendar {
-            margin-bottom: 50px;
-        }
+        .calendar-container { margin-top: 20px; }
+        .month-calendar { margin-bottom: 50px; }
         .month-total {
             font-weight: bold;
             font-size: 1.2em;
@@ -182,20 +181,9 @@
             position: relative;
         }
         .calendar-day.other-month { color: #aaa; }
-        .calendar-day.has-entry {
-            font-weight: bold;
-        }
-        .entry-detail {
-            font-size: 0.8em;
-            margin-top: 5px;
-            line-height: 1.2;
-        }
-        .entry-actions {
-            margin-top: 5px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-        }
+        .calendar-day.has-entry { font-weight: bold; }
+        .entry-detail { font-size: 0.8em; margin-top: 5px; line-height: 1.2; }
+        .entry-actions { margin-top: 5px; display: flex; flex-wrap: wrap; gap: 5px; }
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -210,21 +198,10 @@
         }
         .stat h3 { margin-bottom: 10px; }
         .stat p { font-size: 1.8em; font-weight: bold; color: #e74c3c; }
-        .chart-container {
-            margin: 30px 0;
-            height: 300px;
-        }
+        .chart-container { margin: 30px 0; height: 300px; }
         .no-data { text-align: center; padding: 40px; color: var(--no-data); font-style: italic; }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-        }
-        th, td {
-            padding: 10px;
-            border: 1px solid var(--border);
-            text-align: left;
-        }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { padding: 10px; border: 1px solid var(--border); text-align: left; }
         th { background: var(--table-header); }
         .amount { text-align: right; }
         .actions { text-align: center; white-space: nowrap; }
@@ -247,6 +224,12 @@
             box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
         #main-app { display: none; }
+        .sync-status {
+            text-align: center;
+            font-size: 0.9em;
+            margin: 10px 0;
+            color: #27ae60;
+        }
     </style>
 </head>
 <body>
@@ -278,6 +261,8 @@
                 </div>
             </div>
         </header>
+
+        <div class="sync-status" id="sync-status">Loading data from cloud...</div>
 
         <section class="tabs">
             <button class="tab-btn active" onclick="openTab('dashboard')" data-lang="Dashboard">Dashboard</button>
@@ -386,10 +371,24 @@
     </div>
 
     <script>
+        // Your Firebase Config (already working)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCCFs97XtLPQE3nASwvtLBUcfH6E8-SIns",
+            authDomain: "studio-7486561707-a8f94.firebaseapp.com",
+            projectId: "studio-7486561707-a8f94",
+            storageBucket: "studio-7486561707-a8f94.firebasestorage.app",
+            messagingSenderId: "671038061779",
+            appId: "1:671038061779:web:1fc69c9d4e47bc373f6826"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const DATA_DOC = "shared_expenses/v1/data";
+
         const APP_PASSWORD = "MWE";
 
-        let milkEntries = JSON.parse(localStorage.getItem('milkEntries')) || [];
-        let waterEntries = JSON.parse(localStorage.getItem('waterEntries')) || [];
+        let milkEntries = [];
+        let waterEntries = [];
         let monthlyChart = null;
 
         const MILK_PRICE = 60;
@@ -515,75 +514,65 @@
             }
         };
 
-        // Merge English as fallback
         ['hi', 'gu'].forEach(l => {
             translations[l] = { ...translations.en, ...translations[l] };
         });
 
+        async function loadData() {
+            try {
+                const doc = await db.doc(DATA_DOC).get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    milkEntries = data.milkEntries || [];
+                    waterEntries = data.waterEntries || [];
+                } else {
+                    milkEntries = [];
+                    waterEntries = [];
+                }
+                document.getElementById('sync-status').textContent = "Data synced successfully!";
+                document.getElementById('sync-status').style.color = "#27ae60";
+            } catch (err) {
+                console.error("Load error:", err);
+                document.getElementById('sync-status').textContent = "Offline – changes will sync later";
+                document.getElementById('sync-status').style.color = "#e67e22";
+            }
+            initApp();
+        }
+
+        async function saveData() {
+            try {
+                await db.doc(DATA_DOC).set({
+                    milkEntries,
+                    waterEntries,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (err) {
+                console.error("Save error:", err);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             const loginBtn = document.getElementById('login-btn');
+            const passwordInput = document.getElementById('login-password');
+            const errorMsg = document.getElementById('login-error');
+
             loginBtn.addEventListener('click', () => {
-                const password = document.getElementById('login-password').value;
+                const password = passwordInput.value.trim();
                 if (password === APP_PASSWORD) {
                     document.getElementById('login-page').style.display = 'none';
                     document.getElementById('main-app').style.display = 'block';
-                    initApp();
+                    loadData();
                 } else {
-                    document.getElementById('login-error').style.display = 'block';
+                    errorMsg.style.display = 'block';
                 }
             });
 
-            document.getElementById('login-password').addEventListener('keypress', (e) => {
+            passwordInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
                     loginBtn.click();
                 }
             });
         });
-
-        function changeLanguage() {
-            const lang = document.getElementById('language-select').value;
-            localStorage.setItem('preferredLanguage', lang);
-
-            // Update static elements
-            document.querySelectorAll('[data-lang]').forEach(el => {
-                const key = el.getAttribute('data-lang');
-                if (translations[lang][key]) el.textContent = translations[lang][key];
-            });
-            document.querySelectorAll('[data-lang-placeholder]').forEach(el => {
-                const key = el.getAttribute('data-lang-placeholder');
-                if (translations[lang][key]) el.placeholder = translations[lang][key];
-            });
-
-            // Update dark mode button
-            const themeBtn = document.querySelector('.theme-toggle button');
-            themeBtn.textContent = document.body.classList.contains('dark-mode') ? 
-                (lang === 'en' ? 'Light Mode' : lang === 'hi' ? 'लाइट मोड' : 'લાઇટ મોડ') : 
-                translations[lang].dark_mode;
-
-            populateYearMonthSelects();
-            updateDashboard();
-            renderCalendar();
-            renderLists();
-        }
-
-        function updateDynamicTranslations() {
-            const lang = document.getElementById('language-select').value;
-            document.querySelectorAll('.edit-btn').forEach(btn => {
-                if (!btn.classList.contains('save-btn')) btn.textContent = translations[lang].edit;
-            });
-            document.querySelectorAll('.delete-btn').forEach(btn => btn.textContent = translations[lang].delete);
-            document.querySelectorAll('.save-btn').forEach(btn => btn.textContent = translations[lang].save);
-            document.querySelectorAll('.cancel-btn').forEach(btn => btn.textContent = translations[lang].cancel);
-        }
-
-        function toggleTheme() {
-            document.body.classList.toggle('dark-mode');
-            const lang = document.getElementById('language-select').value;
-            const themeBtn = document.querySelector('.theme-toggle button');
-            themeBtn.textContent = document.body.classList.contains('dark-mode') ? 
-                (lang === 'en' ? 'Light Mode' : lang === 'hi' ? 'लाइट मोड' : 'લાઇટ મોડ') : 
-                translations[lang].dark_mode;
-        }
 
         function initApp() {
             const today = new Date();
@@ -608,7 +597,7 @@
             const currentYear = new Date().getFullYear();
             for (let y = currentYear - 5; y <= currentYear + 1; y++) years.add(y);
 
-            const lang = document.getElementById('language-select').value;
+            const lang = document.getElementById('language-select').value || 'en';
 
             ['dashboard', 'cal', 'list'].forEach(prefix => {
                 const yearSel = document.getElementById(prefix + '-year');
@@ -636,12 +625,13 @@
             const qty = parseFloat(document.getElementById('milk-qty').value) || 0;
             document.getElementById('milk-total').textContent = `Total: ₹${(qty * MILK_PRICE).toFixed(2)}`;
         });
+
         document.getElementById('water-qty').addEventListener('input', () => {
             const qty = parseFloat(document.getElementById('water-qty').value) || 0;
             document.getElementById('water-total').textContent = `Total: ₹${(qty * WATER_PRICE).toFixed(2)}`;
         });
 
-        document.getElementById('milk-form').addEventListener('submit', e => {
+        document.getElementById('milk-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const qty = parseFloat(document.getElementById('milk-qty').value);
             milkEntries.push({
@@ -649,7 +639,7 @@
                 qty: qty,
                 amount: qty * MILK_PRICE
             });
-            localStorage.setItem('milkEntries', JSON.stringify(milkEntries));
+            await saveData();
             e.target.reset();
             document.getElementById('milk-total').textContent = 'Total: ₹0';
             populateYearMonthSelects();
@@ -658,7 +648,7 @@
             renderLists();
         });
 
-        document.getElementById('water-form').addEventListener('submit', e => {
+        document.getElementById('water-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const qty = parseFloat(document.getElementById('water-qty').value);
             waterEntries.push({
@@ -666,7 +656,7 @@
                 qty: qty,
                 amount: qty * WATER_PRICE
             });
-            localStorage.setItem('waterEntries', JSON.stringify(waterEntries));
+            await saveData();
             e.target.reset();
             document.getElementById('water-total').textContent = 'Total: ₹0';
             populateYearMonthSelects();
@@ -681,8 +671,8 @@
 
             const filterFunc = e => {
                 const d = new Date(e.date);
-                const matchMonth = isAllMonth || d.getMonth() === month;
-                const matchYear = isAllYear || d.getFullYear() === year;
+                const matchMonth = isAllMonth || d.getMonth() === parseInt(month);
+                const matchYear = isAllYear || d.getFullYear() === parseInt(year);
                 return matchMonth && matchYear;
             };
 
@@ -695,7 +685,7 @@
         function updateDashboard() {
             const month = document.getElementById('dashboard-month').value;
             const year = document.getElementById('dashboard-year').value;
-            const { milk, water } = getFilteredEntries(month === 'all' ? 'all' : parseInt(month), year === 'all' ? 'all' : parseInt(year));
+            const { milk, water } = getFilteredEntries(month, year);
 
             const milkLtr = milk.reduce((s, e) => s + e.qty, 0);
             const milkAmt = milk.reduce((s, e) => s + e.amount, 0);
@@ -726,7 +716,7 @@
         function generateMilkPDF() {
             const month = document.getElementById('dashboard-month').value;
             const year = document.getElementById('dashboard-year').value;
-            const { milk } = getFilteredEntries(month === 'all' ? 'all' : parseInt(month), year === 'all' ? 'all' : parseInt(year));
+            const { milk } = getFilteredEntries(month, year);
 
             const period = month === 'all' && year === 'all' ? 'All Time' : 
                           month === 'all' ? year : 
@@ -739,7 +729,7 @@
             doc.setFontSize(14);
             doc.text(`Period: ${period}`, 105, 30, { align: 'center' });
 
-            const tableData = milk.map(e => [e.date, e.qty.toFixed(1) + ' Ltr', 'Rs' + e.amount.toFixed(2)]);
+            const tableData = milk.map(e => [e.date, e.qty.toFixed(1) + ' Ltr', '₹' + e.amount.toFixed(2)]);
             const totalLtr = milk.reduce((s, e) => s + e.qty, 0);
             const totalAmt = milk.reduce((s, e) => s + e.amount, 0);
 
@@ -751,7 +741,7 @@
             });
 
             doc.setFontSize(14);
-            doc.text(`Total: ${totalLtr.toFixed(1)} Ltr   Rs${totalAmt.toFixed(2)}`, 14, doc.lastAutoTable.finalY + 10);
+            doc.text(`Total: ${totalLtr.toFixed(1)} Ltr   ₹${totalAmt.toFixed(2)}`, 14, doc.lastAutoTable.finalY + 10);
 
             doc.save(`Milk_Report_${period.replace(/ /g, '_')}.pdf`);
         }
@@ -759,7 +749,7 @@
         function generateWaterPDF() {
             const month = document.getElementById('dashboard-month').value;
             const year = document.getElementById('dashboard-year').value;
-            const { water } = getFilteredEntries(month === 'all' ? 'all' : parseInt(month), year === 'all' ? 'all' : parseInt(year));
+            const { water } = getFilteredEntries(month, year);
 
             const period = month === 'all' && year === 'all' ? 'All Time' : 
                           month === 'all' ? year : 
@@ -772,7 +762,7 @@
             doc.setFontSize(14);
             doc.text(`Period: ${period}`, 105, 30, { align: 'center' });
 
-            const tableData = water.map(e => [e.date, e.qty + ' Bottles', 'Rs' + e.amount.toFixed(2)]);
+            const tableData = water.map(e => [e.date, e.qty + ' Bottles', '₹' + e.amount.toFixed(2)]);
             const totalBtl = water.reduce((s, e) => s + e.qty, 0);
             const totalAmt = water.reduce((s, e) => s + e.amount, 0);
 
@@ -784,7 +774,7 @@
             });
 
             doc.setFontSize(14);
-            doc.text(`Total: ${totalBtl} Bottles   Rs${totalAmt.toFixed(2)}`, 14, doc.lastAutoTable.finalY + 10);
+            doc.text(`Total: ${totalBtl} Bottles   ₹${totalAmt.toFixed(2)}`, 14, doc.lastAutoTable.finalY + 10);
 
             doc.save(`Water_Report_${period.replace(/ /g, '_')}.pdf`);
         }
@@ -795,7 +785,7 @@
             const container = document.getElementById('calendar-container');
             container.innerHTML = '';
 
-            const lang = document.getElementById('language-select').value;
+            const lang = document.getElementById('language-select').value || 'en';
 
             let entriesList = [];
             let grandTotal = 0;
@@ -829,7 +819,7 @@
             const grouped = {};
             entriesList.forEach(item => {
                 const d = new Date(item.entry.date);
-                const key = `${d.getFullYear()}-${d.getMonth()}`;
+                const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2, '0')}`;
                 if (!grouped[key]) grouped[key] = { entries: [], total: 0 };
                 grouped[key].entries.push(item);
                 grouped[key].total += item.entry.amount;
@@ -847,11 +837,11 @@
                 container.appendChild(grand);
             }
 
-            updateDynamicTranslations(); // Important: translate dynamic buttons
+            updateDynamicTranslations();
         }
 
         function renderSingleMonthCalendar(container, month, year, entriesList, monthTotal) {
-            const lang = document.getElementById('language-select').value;
+            const lang = document.getElementById('language-select').value || 'en';
             const monthName = new Date(year, month).toLocaleString('default', { month: 'long', year: 'numeric' });
 
             const monthDiv = document.createElement('div');
@@ -877,8 +867,10 @@
             entriesList.forEach(item => {
                 const d = new Date(item.entry.date);
                 const day = d.getDate();
-                if (!dayEntries[day]) dayEntries[day] = [];
-                dayEntries[day].push(item);
+                if (d.getMonth() === month && d.getFullYear() === year) {
+                    if (!dayEntries[day]) dayEntries[day] = [];
+                    dayEntries[day].push(item);
+                }
             });
 
             for (let i = 0; i < firstDay; i++) {
@@ -900,8 +892,8 @@
                         if (item.type === 'milk') milkQty += item.entry.qty;
                         else waterQty += item.entry.qty;
                     });
-                    if (milkQty > 0) detail.innerHTML += `Milk: <span class="qty-display">${milkQty}</span> L<br>`;
-                    if (waterQty > 0) detail.innerHTML += `Water: <span class="qty-display">${waterQty}</span> Btl<br>`;
+                    if (milkQty > 0) detail.innerHTML += `Milk: ${milkQty.toFixed(1)} L<br>`;
+                    if (waterQty > 0) detail.innerHTML += `Water: ${waterQty} Btl<br>`;
 
                     const actions = document.createElement('div');
                     actions.className = 'entry-actions';
@@ -943,8 +935,8 @@
 
                             this.textContent = translations[lang].save;
                             this.className = 'save-btn';
-                            this.onclick = function() {
-                                saveCalendarEntry(item.index, item.type, input.value);
+                            this.onclick = async function() {
+                                await saveCalendarEntry(item.index, item.type, input.value);
                             };
 
                             const cancelBtn = document.createElement('button');
@@ -956,9 +948,9 @@
                             deleteBtn.style.display = 'none';
                         };
 
-                        deleteBtn.onclick = () => {
+                        deleteBtn.onclick = async () => {
                             if (confirm(translations[lang].confirm_delete)) {
-                                deleteCalendarEntry(item.index, item.type);
+                                await deleteCalendarEntry(item.index, item.type);
                             }
                         };
                     });
@@ -980,25 +972,22 @@
             container.appendChild(monthDiv);
         }
 
-        function saveCalendarEntry(index, type, newQtyStr) {
+        async function saveCalendarEntry(index, type, newQtyStr) {
             const newQty = parseFloat(newQtyStr);
-            if (isNaN(newQty) || newQty < 0) {
-                alert('Invalid quantity');
-                return;
-            }
+            if (isNaN(newQty) || newQty < 0) { alert('Invalid quantity'); return; }
             const entries = type === 'milk' ? milkEntries : waterEntries;
             entries[index].qty = newQty;
             entries[index].amount = newQty * (type === 'milk' ? MILK_PRICE : WATER_PRICE);
-            localStorage.setItem(type === 'milk' ? 'milkEntries' : 'waterEntries', JSON.stringify(entries));
+            await saveData();
             renderCalendar();
             renderLists();
             updateDashboard();
         }
 
-        function deleteCalendarEntry(index, type) {
+        async function deleteCalendarEntry(index, type) {
             const entries = type === 'milk' ? milkEntries : waterEntries;
             entries.splice(index, 1);
-            localStorage.setItem(type === 'milk' ? 'milkEntries' : 'waterEntries', JSON.stringify(entries));
+            await saveData();
             renderCalendar();
             renderLists();
             updateDashboard();
@@ -1007,9 +996,9 @@
         function renderLists() {
             const month = document.getElementById('list-month').value;
             const year = document.getElementById('list-year').value;
-            const { milk, water } = getFilteredEntries(month === 'all' ? 'all' : parseInt(month), year === 'all' ? 'all' : parseInt(year));
+            const { milk, water } = getFilteredEntries(month, year);
 
-            const lang = document.getElementById('language-select').value;
+            const lang = document.getElementById('language-select').value || 'en';
 
             const renderTable = (containerId, data, type) => {
                 const container = document.getElementById(containerId);
@@ -1027,7 +1016,7 @@
                     const index = type === 'milk' ? milkEntries.indexOf(e) : waterEntries.indexOf(e);
                     row.innerHTML = `
                         <td>${e.date}</td>
-                        <td><span class="qty-display">${e.qty}</span> ${type === 'milk' ? 'Ltr' : 'Bottles'}</td>
+                        <td><span class="qty-display">${type === 'milk' ? e.qty.toFixed(1) : e.qty}</span> ${type === 'milk' ? 'Ltr' : 'Bottles'}</td>
                         <td class="amount">₹${e.amount.toFixed(2)}</td>
                         <td class="actions">
                             <button class="edit-btn">${translations[lang].edit}</button>
@@ -1050,8 +1039,8 @@
 
                         this.textContent = translations[lang].save;
                         this.className = 'save-btn';
-                        this.onclick = function() {
-                            saveListEntry(index, type, input.value);
+                        this.onclick = async function() {
+                            await saveListEntry(index, type, input.value);
                         };
 
                         const cancelBtn = document.createElement('button');
@@ -1065,9 +1054,9 @@
                     };
 
                     const deleteBtn = actionsCell.querySelector('.delete-btn');
-                    deleteBtn.onclick = () => {
+                    deleteBtn.onclick = async () => {
                         if (confirm(translations[lang].confirm_delete)) {
-                            deleteListEntry(index, type);
+                            await deleteListEntry(index, type);
                         }
                     };
 
@@ -1090,42 +1079,79 @@
             const allTotal = milk.reduce((s, e) => s + e.amount, 0) + water.reduce((s, e) => s + e.amount, 0);
             if (allTotal > 0) {
                 let text = translations[lang].grand_total;
-                if (month !== 'all' && year !== 'all') {
-                    text = translations[lang].month_total;
-                } else if (month === 'all' && year !== 'all') {
-                    text = `${translations[lang].year_total} (${year})`;
-                }
+                if (month !== 'all' && year !== 'all') text = translations[lang].month_total;
+                else if (month === 'all' && year !== 'all') text = `${translations[lang].year_total} (${year})`;
                 grandDiv.textContent = `${text}: ₹${allTotal.toFixed(2)}`;
                 grandDiv.style.display = 'block';
             } else {
                 grandDiv.style.display = 'none';
             }
 
-            updateDynamicTranslations(); // Translate dynamic buttons in list view
+            updateDynamicTranslations();
         }
 
-        function saveListEntry(index, type, newQtyStr) {
+        async function saveListEntry(index, type, newQtyStr) {
             const newQty = parseFloat(newQtyStr);
-            if (isNaN(newQty) || newQty < 0) {
-                alert('Invalid quantity');
-                return;
-            }
+            if (isNaN(newQty) || newQty < 0) { alert('Invalid quantity'); return; }
             const entries = type === 'milk' ? milkEntries : waterEntries;
             entries[index].qty = newQty;
             entries[index].amount = newQty * (type === 'milk' ? MILK_PRICE : WATER_PRICE);
-            localStorage.setItem(type === 'milk' ? 'milkEntries' : 'waterEntries', JSON.stringify(entries));
+            await saveData();
             renderLists();
             renderCalendar();
             updateDashboard();
         }
 
-        function deleteListEntry(index, type) {
+        async function deleteListEntry(index, type) {
             const entries = type === 'milk' ? milkEntries : waterEntries;
             entries.splice(index, 1);
-            localStorage.setItem(type === 'milk' ? 'milkEntries' : 'waterEntries', JSON.stringify(entries));
+            await saveData();
             renderLists();
             renderCalendar();
             updateDashboard();
+        }
+
+        function changeLanguage() {
+            const lang = document.getElementById('language-select').value;
+            localStorage.setItem('preferredLanguage', lang);
+
+            document.querySelectorAll('[data-lang]').forEach(el => {
+                const key = el.getAttribute('data-lang');
+                if (translations[lang][key]) el.textContent = translations[lang][key];
+            });
+            document.querySelectorAll('[data-lang-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-lang-placeholder');
+                if (translations[lang][key]) el.placeholder = translations[lang][key];
+            });
+
+            const themeBtn = document.querySelector('.theme-toggle button');
+            themeBtn.textContent = document.body.classList.contains('dark-mode') ? 
+                (lang === 'en' ? 'Light Mode' : lang === 'hi' ? 'लाइट मोड' : 'લાઇટ મોડ') : 
+                translations[lang].dark_mode;
+
+            populateYearMonthSelects();
+            updateDashboard();
+            renderCalendar();
+            renderLists();
+        }
+
+        function updateDynamicTranslations() {
+            const lang = document.getElementById('language-select').value || 'en';
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                if (!btn.classList.contains('save-btn')) btn.textContent = translations[lang].edit;
+            });
+            document.querySelectorAll('.delete-btn').forEach(btn => btn.textContent = translations[lang].delete);
+            document.querySelectorAll('.save-btn').forEach(btn => btn.textContent = translations[lang].save);
+            document.querySelectorAll('.cancel-btn').forEach(btn => btn.textContent = translations[lang].cancel);
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            const lang = document.getElementById('language-select').value || 'en';
+            const themeBtn = document.querySelector('.theme-toggle button');
+            themeBtn.textContent = document.body.classList.contains('dark-mode') ? 
+                (lang === 'en' ? 'Light Mode' : lang === 'hi' ? 'लाइट मोड' : 'લાઇટ મોડ') : 
+                translations[lang].dark_mode;
         }
 
         function openTab(tabName) {
