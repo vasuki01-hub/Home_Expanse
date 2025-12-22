@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Milk & Water Daily Expenses Manager</title>
+    <title>Home Expanses</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
-    <!-- Firebase Compat SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <style>
@@ -19,7 +18,6 @@
             --border: #ddd;
             --stat-bg: #ecf0f1;
             --table-header: #f1f1f1;
-            --report-bg: #f0f8ff;
             --input-border: #ccc;
             --no-data: #777;
             --shadow: rgba(0,0,0,0.1);
@@ -32,7 +30,6 @@
             --border: #444;
             --stat-bg: #2d2d2d;
             --table-header: #333;
-            --report-bg: #252525;
             --input-border: #555;
             --no-data: #999;
             --shadow: rgba(0,0,0,0.4);
@@ -55,29 +52,28 @@
         header {
             text-align: center;
             margin-bottom: 30px;
-            position: relative;
         }
         h1 { color: var(--heading); margin-bottom: 10px; }
         .header-controls {
-            position: relative;
-            top: 0;
-            right: 0;
             display: flex;
             gap: 10px;
-            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
         }
         select, button {
-            padding: 8px 12px;
+            padding: 6px 10px;
             border-radius: 8px;
             border: 1px solid var(--input-border);
             background: var(--container-bg);
             color: var(--text);
+            font-size: 0.9em;
         }
-        button { margin-top: 0px; background: #3498db; color: white; cursor: pointer; }
+        button { background: #3498db; color: white; cursor: pointer; }
         button:hover { background: #2980b9; }
-        .pdf-btn { background: #e74c3c; margin-left: 10px; }
+        .pdf-btn { background: #e74c3c; }
         .edit-btn { background: #f39c12; font-size: 0.8em; padding: 4px 8px; margin: 2px; }
         .delete-btn { background: #e74c3c; font-size: 0.8em; padding: 4px 8px; margin: 2px; }
+        .remove-photo-btn { background: #c0392b; font-size: 0.8em; padding: 3px 6px; margin: 2px; }
         .save-btn { background: #27ae60; }
         .cancel-btn { background: #95a5a6; }
         h2 {
@@ -92,8 +88,8 @@
         .tabs {
             display: flex;
             flex-wrap: wrap;
-            margin-bottom: 20px;
             gap: 10px;
+            margin-bottom: 20px;
         }
         .tab-btn {
             flex: 1;
@@ -116,74 +112,26 @@
             margin-bottom: 30px;
         }
         input, select {
-            padding: 12px;
-            border: 5px solid var(--input-border);
-            border-radius: 30px;
+            padding: 10px;
+            border: 1px solid var(--input-border);
+            border-radius: 8px;
             width: 100%;
-        }
-        .auto-amount {
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #27ae60;
-            padding: 12px;
-            background: #ecf0f1;
-            border-radius: 5px;
         }
         .filter {
             display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
+            gap: 10px;
+            margin-bottom: 15px;
             flex-wrap: wrap;
             align-items: center;
-        }
-        .calendar-container { margin-top: 20px; }
-        .month-calendar { margin-bottom: 50px; }
-        .month-total {
-            font-weight: bold;
-            font-size: 1.2em;
-            text-align: right;
-            padding: 15px;
-            background: var(--stat-bg);
-            border-radius: 8px;
-            margin-top: 10px;
-        }
-        .grand-total {
-            font-weight: bold;
-            font-size: 1.5em;
-            text-align: center;
-            padding: 20px;
-            background: #2c3e50;
-            color: white;
-            border-radius: 8px;
-            margin-top: 30px;
-        }
-        .calendar-header {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            background: #2c3e50;
-            color: white;
-            font-weight: bold;
-        }
-        .calendar-header div, .calendar-day {
-            padding: 10px;
-            text-align: center;
-            border: 1px solid var(--border);
-        }
-        .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 5px;
-        }
-        .calendar-day {
-            min-height: 80px;
-            background: var(--container-bg);
             font-size: 0.9em;
-            position: relative;
+            justify-content: flex-start;
         }
-        .calendar-day.other-month { color: #aaa; }
-        .calendar-day.has-entry { font-weight: bold; }
-        .entry-detail { font-size: 0.8em; margin-top: 5px; line-height: 1.2; }
-        .entry-actions { margin-top: 5px; display: flex; flex-wrap: wrap; gap: 5px; }
+        .filter label { margin-right: 5px; white-space: nowrap; }
+        .filter select {
+            padding: 5px 8px;
+            font-size: 0.9em;
+            max-width: 150px;
+        }
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -201,11 +149,75 @@
         .chart-container { margin: 30px 0; height: 300px; }
         .no-data { text-align: center; padding: 40px; color: var(--no-data); font-style: italic; }
         table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        th, td { padding: 10px; border: 1px solid var(--border); text-align: left; }
+        th, td { padding: 10px; border: 1px solid var(--border); text-align: left; font-size: 0.9em; }
         th { background: var(--table-header); }
         .amount { text-align: right; }
         .actions { text-align: center; white-space: nowrap; }
-        .editable-input { padding: 5px; width: 80px; }
+        .photo-preview {
+            max-width: 100px;
+            max-height: 100px;
+            margin: 5px;
+            border-radius: 8px;
+            object-fit: cover;
+            cursor: pointer;
+        }
+        .photo-gallery {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .photo-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+        .modal-content {
+            max-width: 90%;
+            text-align: center;
+        }
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 40px;
+            cursor: pointer;
+            color: white;
+        }
+        .calendar-header {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            background: #2c3e50;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+        }
+        .calendar-header div { padding: 10px; }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-top: 10px;
+        }
+        .calendar-day {
+            min-height: 100px;
+            background: white
+            border  1px solid var(--border);
+            padding : 5px;
+            font-size : 1rem;
+        }
+        .calendar-day.other-month { opacity: 0.5; }
+        .calendar-day.has-entry { background: none ; }
+        .day-number { font-weight: bold; }
+        .day-entries { font-size: 0.8em; margin-top: 5px; line-height: 1.3; }
         #login-page {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -230,53 +242,41 @@
             margin: 10px 0;
             color: #27ae60;
         }
-        .logout-btn {
-            background: #e74c3c;
-            margin-top: 0;
-        }
-        .logout-btn:hover {
-            background: #c0392b;
-        }
+        .logout-btn { background: #e74c3c; }
     </style>
 </head>
 <body>
 
-    <!-- Login Page -->
     <div id="login-page">
         <div class="login-box">
-            <h2 data-lang="login_title">Milk & Water Manager Login</h2>
-            <input type="email" id="login-email" placeholder="Enter Email (optional)" style="margin-bottom: 10px;">
+            <h2 data-lang="login_title">Home Expanses Login</h2>
             <input type="password" id="login-password" placeholder="Enter Password">
             <button id="login-btn" data-lang="login_btn">Login</button>
             <p id="login-error" style="color:red; margin-top:15px; display:none;" data-lang="wrong_password">Incorrect password!</p>
         </div>
     </div>
 
-    <!-- Main App -->
     <div id="main-app" class="container">
         <header>
-            <h1 data-lang="title">Milk & Water Daily Expenses Manager</h1>
+            <h1 data-lang="title">Home Expanses</h1>
             <div class="header-controls">
-                <div class="language-selector">
-                    <select id="language-select" onchange="changeLanguage()">
-                        <option value="en">English</option>
-                        <option value="hi">हिंदी</option>
-                        <option value="gu">ગુજરાતી</option>
-                    </select>
-                </div>
-                <div class="theme-toggle">
-                    <button onclick="toggleTheme()" data-lang="dark_mode">Dark Mode</button>
-                </div>
+                <select id="language-select" onchange="changeLanguage()">
+                    <option value="en">English</option>
+                    <option value="hi">हिंदी</option>
+                    <option value="gu">ગુજરાતી</option>
+                </select>
+                <button onclick="toggleTheme()" data-lang="dark_mode">Dark Mode</button>
                 <button id="logout-btn" class="logout-btn" style="display:none;">Logout</button>
             </div>
         </header>
 
-        <div class="sync-status" id="sync-status">Loading data from cloud...</div>
+        <div class="sync-status" id="sync-status">Loading data...</div>
 
         <section class="tabs">
             <button class="tab-btn active" onclick="openTab('dashboard')" data-lang="Dashboard">Dashboard</button>
             <button class="tab-btn" onclick="openTab('milk')" data-lang="add_milk">Add Milk</button>
             <button class="tab-btn" onclick="openTab('water')" data-lang="add_water">Add Water</button>
+            <button class="tab-btn" onclick="openTab('extra')" data-lang="add_extra">Add Extra Expense</button>
             <button class="tab-btn" onclick="openTab('calendar')" data-lang="calendar_view">Calendar View</button>
             <button class="tab-btn" onclick="openTab('lists')" data-lang="list_view">List View</button>
         </section>
@@ -284,39 +284,24 @@
         <!-- Dashboard -->
         <section id="dashboard" class="tab-content">
             <div class="filter">
-                <div>
-                    <label data-lang="filter_month">Month:</label>
-                    <select id="dashboard-month" onchange="updateDashboard()"></select>
-                    <label data-lang="filter_year">Year:</label>
-                    <select id="dashboard-year" onchange="updateDashboard()"></select>
-                </div>
-                <div style="margin-top:10px;">
-                    <button class="pdf-btn" onclick="generateMilkPDF()" data-lang="download_milk_pdf">Download Milk Report PDF</button>
-                    <button class="pdf-btn" onclick="generateWaterPDF()" data-lang="download_water_pdf">Download Water Report PDF</button>
+                <label data-lang="filter_month">Month:</label>
+                <select id="dashboard-month" onchange="updateDashboard()"></select>
+                <label data-lang="filter_year">Year:</label>
+                <select id="dashboard-year" onchange="updateDashboard()"></select>
+                <div style="margin-left: auto;">
+                    <button class="pdf-btn" onclick="generateMilkPDF()" data-lang="download_milk_pdf">Milk PDF</button>
+                    <button class="pdf-btn" onclick="generateWaterPDF()" data-lang="download_water_pdf">Water PDF</button>
+                    <button class="pdf-btn" onclick="generateExtraPDF()" data-lang="download_extra_pdf">Extra PDF</button>
                 </div>
             </div>
 
             <div class="stats">
-                <div class="stat">
-                    <h3 data-lang="total_milk_ltr">Total Milk (Ltr)</h3>
-                    <p id="dash-milk-ltr">0</p>
-                </div>
-                <div class="stat">
-                    <h3 data-lang="milk_expense">Milk Expense</h3>
-                    <p id="dash-milk-amt">₹0</p>
-                </div>
-                <div class="stat">
-                    <h3 data-lang="total_water_btl">Total Water (Bottles)</h3>
-                    <p id="dash-water-btl">0</p>
-                </div>
-                <div class="stat">
-                    <h3 data-lang="water_expense">Water Expense</h3>
-                    <p id="dash-water-amt">₹0</p>
-                </div>
-                <div class="stat">
-                    <h3 data-lang="total_expense">Total Expense</h3>
-                    <p id="dash-total">₹0</p>
-                </div>
+                <div class="stat"><h3 data-lang="total_milk_ltr">Total Milk (Ltr)</h3><p id="dash-milk-ltr">0</p></div>
+                <div class="stat"><h3 data-lang="milk_expense">Milk Expense</h3><p id="dash-milk-amt">₹0</p></div>
+                <div class="stat"><h3 data-lang="total_water_btl">Total Water (Btl)</h3><p id="dash-water-btl">0</p></div>
+                <div class="stat"><h3 data-lang="water_expense">Water Expense</h3><p id="dash-water-amt">₹0</p></div>
+                <div class="stat"><h3 data-lang="extra_expense">Extra Expenses</h3><p id="dash-extra-amt">₹0</p></div>
+                <div class="stat"><h3 data-lang="total_expense">Grand Total</h3><p id="dash-total">₹0</p></div>
             </div>
 
             <div class="chart-container">
@@ -324,31 +309,42 @@
             </div>
         </section>
 
-        <!-- Add Milk -->
+        <!-- Add Forms -->
         <section id="milk" class="tab-content" style="display:none;">
             <h2 data-lang="add_milk">Add Milk Purchase</h2>
             <form id="milk-form">
                 <input type="date" id="milk-date" required>
-                <input type="number" id="milk-qty" placeholder="Quantity (Liters)" min="0" step="0.5" required data-lang-placeholder="milk_qty_placeholder">
-                <div>
-                    <strong data-lang="milk_price">Fixed Price: ₹60 per Liter</strong>
-                    <div class="auto-amount" id="milk-total">Total: ₹0</div>
-                </div>
+                <input type="number" id="milk-qty" placeholder="Quantity (Liters)" min="0" step="0.5" required>
+                <div><strong data-lang="milk_price">Fixed Price: ₹60 per Liter</strong><div class="auto-amount" id="milk-total">Total: ₹0</div></div>
                 <button type="submit" data-lang="add_milk_btn">Add Milk Entry</button>
             </form>
         </section>
 
-        <!-- Add Water -->
         <section id="water" class="tab-content" style="display:none;">
             <h2 data-lang="add_water">Add Water Purchase</h2>
             <form id="water-form">
                 <input type="date" id="water-date" required>
-                <input type="number" id="water-qty" placeholder="Quantity (Bottles)" min="1" step="1" required data-lang-placeholder="water_qty_placeholder">
-                <div>
-                    <strong data-lang="water_price">Fixed Price: ₹15 per Bottle</strong>
-                    <div class="auto-amount" id="water-total">Total: ₹0</div>
-                </div>
+                <input type="number" id="water-qty" placeholder="Quantity (Bottles)" min="1" step="1" required>
+                <div><strong data-lang="water_price">Fixed Price: ₹15 per Bottle</strong><div class="auto-amount" id="water-total">Total: ₹0</div></div>
                 <button type="submit" data-lang="add_water_btn">Add Water Entry</button>
+            </form>
+        </section>
+
+        <section id="extra" class="tab-content" style="display:none;">
+            <h2 data-lang="add_extra">Add Extra Expense</h2>
+            <form id="extra-form">
+                <input type="date" id="extra-date" required>
+                <select id="extra-category" required>
+                    <option value="" disabled selected>Select Category</option>
+                    <option>Utensils</option><option>Repairs</option><option>Electricity Bill</option>
+                    <option>Mobile Bill</option><option>Gas Bill</option><option>Event</option>
+                    <option>Grocery</option><option>Other</option>
+                </select>
+                <input type="text" id="extra-desc" placeholder="Description" required>
+                <input type="number" id="extra-amount" placeholder="Amount (₹)" min="0" step="0.01" required>
+                <input type="file" id="extra-photos" accept="image/*" multiple>
+                <div id="extra-photo-preview" class="photo-gallery"></div>
+                <button type="submit" class="save-btn">Add Extra Expense</button>
             </form>
         </section>
 
@@ -360,7 +356,7 @@
                 <label data-lang="filter_year">Year:</label>
                 <select id="cal-year" onchange="renderCalendar()"></select>
             </div>
-            <div id="calendar-container" class="calendar-container"></div>
+            <div id="calendar-container"></div>
         </section>
 
         <!-- List View -->
@@ -371,16 +367,23 @@
                 <label data-lang="filter_year">Year:</label>
                 <select id="list-year" onchange="renderLists()"></select>
             </div>
-            <h2 data-lang="milk_entries">Milk Entries</h2>
-            <div id="milk-list"></div>
-            <h2 data-lang="water_entries">Water Entries</h2>
-            <div id="water-list"></div>
+            <h2 data-lang="milk_entries">Milk Entries</h2><div id="milk-list"></div>
+            <h2 data-lang="water_entries">Water Entries</h2><div id="water-list"></div>
+            <h2 data-lang="extra_entries">Extra Expenses</h2>
+            <div id="extra-total" class="month-total" style="display:none;"></div>
+            <div id="extra-list"></div>
             <div id="list-grand-total" class="grand-total" style="display:none;"></div>
         </section>
     </div>
 
+    <div id="photo-modal" class="modal" onclick="this.style.display='none'">
+        <span class="close-modal">&times;</span>
+        <div class="modal-content">
+            <img id="modal-photo" style="max-width:90%; max-height:80vh;" src="" alt="Photo">
+        </div>
+    </div>
+
     <script>
-        // Your Firebase Config (already working)
         const firebaseConfig = {
             apiKey: "AIzaSyCCFs97XtLPQE3nASwvtLBUcfH6E8-SIns",
             authDomain: "studio-7486561707-a8f94.firebaseapp.com",
@@ -393,139 +396,94 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const DATA_DOC = "shared_expenses/data";
+        const APP_PASSWORD = "HE";
 
-        const APP_PASSWORD = "MWE";
-
-        let milkEntries = [];
-        let waterEntries = [];
-        let monthlyChart = null;
-
-        const MILK_PRICE = 60;
-        const WATER_PRICE = 15;
+        let milkEntries = [], waterEntries = [], extraEntries = [], monthlyChart = null;
+        const MILK_PRICE = 60, WATER_PRICE = 15;
 
         const translations = {
             en: {
-                title: "Milk & Water Daily Expenses Manager",
-                login_title: "Milk & Water Manager Login",
+                title: "Home Expanses",
+                login_title: "Home Expanses Login",
                 login_btn: "Login",
                 wrong_password: "Incorrect password!",
                 dark_mode: "Dark Mode",
                 Dashboard: "Dashboard",
                 add_milk: "Add Milk",
                 add_water: "Add Water",
+                add_extra: "Add Extra Expense",
                 calendar_view: "Calendar View",
                 list_view: "List View",
                 filter_month: "Month:",
                 filter_year: "Year:",
-                all_time: "All Time",
                 total_milk_ltr: "Total Milk (Ltr)",
                 milk_expense: "Milk Expense",
-                total_water_btl: "Total Water (Bottles)",
+                total_water_btl: "Total Water (Btl)",
                 water_expense: "Water Expense",
-                total_expense: "Total Expense",
-                add_milk_btn: "Add Milk Entry",
-                add_water_btn: "Add Water Entry",
-                milk_qty_placeholder: "Quantity (Liters)",
-                water_qty_placeholder: "Quantity (Bottles)",
+                extra_expense: "Extra Expenses",
+                total_expense: "Grand Total",
                 milk_price: "Fixed Price: ₹60 per Liter",
                 water_price: "Fixed Price: ₹15 per Bottle",
+                add_milk_btn: "Add Milk Entry",
+                add_water_btn: "Add Water Entry",
                 milk_entries: "Milk Entries",
                 water_entries: "Water Entries",
-                month_total: "Month Total",
-                grand_total: "Grand Total (All Time)",
-                year_total: "Year Total",
-                download_milk_pdf: "Download Milk Report PDF",
-                download_water_pdf: "Download Water Report PDF",
-                edit: "Edit",
-                save: "Save",
-                cancel: "Cancel",
-                delete: "Delete",
-                confirm_delete: "Are you sure you want to delete this entry?",
-                sun: "Sun", mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat"
+                extra_entries: "Extra Expenses",
+                download_milk_pdf: "Milk PDF",
+                download_water_pdf: "Water PDF",
+                download_extra_pdf: "Extra PDF"
             },
             hi: {
-                title: "दूध और पानी दैनिक खर्च प्रबंधक",
-                login_title: "दूध और पानी प्रबंधक लॉगिन",
-                login_btn: "लॉगिन करें",
+                title: "होम खर्च",
+                login_title: "होम खर्च लॉगिन",
+                login_btn: "लॉगिन",
                 wrong_password: "गलत पासवर्ड!",
                 dark_mode: "डार्क मोड",
                 Dashboard: "डैशबोर्ड",
                 add_milk: "दूध जोड़ें",
                 add_water: "पानी जोड़ें",
+                add_extra: "अतिरिक्त खर्च जोड़ें",
                 calendar_view: "कैलेंडर दृश्य",
                 list_view: "सूची दृश्य",
                 filter_month: "माह:",
                 filter_year: "वर्ष:",
-                all_time: "सभी समय",
                 total_milk_ltr: "कुल दूध (लीटर)",
-                milk_expense: "दूध का खर्च",
-                total_water_btl: "कुल पानी (बोतलें)",
-                water_expense: "पानी का खर्च",
-                total_expense: "कुल खर्च",
-                add_milk_btn: "दूध प्रविष्टि जोड़ें",
-                add_water_btn: "पानी प्रविष्टि जोड़ें",
-                milk_qty_placeholder: "मात्रा (लीटर)",
-                water_qty_placeholder: "मात्रा (बोतलें)",
-                milk_price: "निश्चित मूल्य: ₹60 प्रति लीटर",
-                water_price: "निश्चित मूल्य: ₹15 प्रति बोतल",
+                milk_expense: "दूध खर्च",
+                total_water_btl: "कुल पानी (बोतल)",
+                water_expense: "पानी खर्च",
+                extra_expense: "अतिरिक्त खर्च",
+                total_expense: "कुल योग",
                 milk_entries: "दूध प्रविष्टियाँ",
                 water_entries: "पानी प्रविष्टियाँ",
-                month_total: "माह का कुल",
-                grand_total: "कुल योग (सभी समय)",
-                year_total: "वर्ष का कुल",
-                download_milk_pdf: "दूध रिपोर्ट PDF डाउनलोड करें",
-                download_water_pdf: "पानी रिपोर्ट PDF डाउनलोड करें",
-                edit: "संपादित करें",
-                save: "सहेजें",
-                cancel: "रद्द करें",
-                delete: "हटाएं",
-                confirm_delete: "क्या आप इस प्रविष्टि को हटाना चाहते हैं?",
-                sun: "रवि", mon: "सोम", tue: "मंगल", wed: "बुध", thu: "गुरु", fri: "शुक्र", sat: "शनि"
+                extra_entries: "अतिरिक्त खर्च"
             },
             gu: {
-                title: "દૂધ અને પાણી દૈનિક ખર્ચ મેનેજર",
-                login_title: "દૂધ અને પાણી મેનેજર લોગિન",
+                title: "ઘર ખર્ચ",
+                login_title: "ઘર ખર્ચ લોગિન",
                 login_btn: "લોગિન",
                 wrong_password: "ખોટો પાસવર્ડ!",
                 dark_mode: "ડાર્ક મોડ",
                 Dashboard: "ડૅશબોર્ડ",
                 add_milk: "દૂધ ઉમેરો",
                 add_water: "પાણી ઉમેરો",
+                add_extra: "અતિરિક્ત ખર્ચ ઉમેરો",
                 calendar_view: "કૅલેન્ડર દૃશ્ય",
                 list_view: "યાદી દૃશ્ય",
                 filter_month: "મહિનો:",
                 filter_year: "વર્ષ:",
-                all_time: "બધો સમય",
                 total_milk_ltr: "કુલ દૂધ (લિટર)",
-                milk_expense: "દૂધનો ખર્ચ",
+                milk_expense: "દૂધ ખર્ચ",
                 total_water_btl: "કુલ પાણી (બોટલ)",
-                water_expense: "પાણીનો ખર્ચ",
-                total_expense: "કુલ ખર્ચ",
-                add_milk_btn: "દૂધ એન્ટ્રી ઉમેરો",
-                add_water_btn: "પાણી એન્ટ્રી ઉમેરો",
-                milk_qty_placeholder: "જથ્થો (લિટર)",
-                water_qty_placeholder: "જથ્થો (બોટલ)",
-                milk_price: "નિશ્ચિત કિંમત: ₹60 પ્રતિ લિટર",
-                water_price: "નિશ્ચિત કિંમત: ₹15 પ્રતિ બોટલ",
+                water_expense: "પાણી ખર્ચ",
+                extra_expense: "અતિરિક્ત ખર્ચ",
+                total_expense: "કુલ યોગ",
                 milk_entries: "દૂધ એન્ટ્રીઓ",
                 water_entries: "પાણી એન્ટ્રીઓ",
-                month_total: "મહિનાનો કુલ",
-                grand_total: "કુલ યોગ (બધો સમય)",
-                year_total: "વર્ષનો કુલ",
-                download_milk_pdf: "દૂધ રિપોર્ટ PDF ડાઉનલોડ કરો",
-                download_water_pdf: "પાણી રિપોર્ટ PDF ડાઉનલોડ કરો",
-                edit: "સંપાદિત કરો",
-                save: "સાચવો",
-                cancel: "રદ કરો",
-                delete: "કાઢી નાખો",
-                confirm_delete: "શું તમે આ એન્ટ્રી કાઢી નાખવા માટે ખાતરી કરો છો?",
-                sun: "રવિ", mon: "સોમ", tue: "મંગળ", wed: "બુધ", thu: "ગુરુ", fri: "શુક્ર", sat: "શનિ"
+                extra_entries: "અતિરિક્ત ખર્ચ"
             }
         };
 
-        ['hi', 'gu'].forEach(l => {
-            translations[l] = { ...translations.en, ...translations[l] };
-        });
+        let currentLang = 'en';
 
         async function loadData() {
             try {
@@ -534,14 +492,11 @@
                     const data = doc.data();
                     milkEntries = data.milkEntries || [];
                     waterEntries = data.waterEntries || [];
-                } else {
-                    milkEntries = [];
-                    waterEntries = [];
+                    extraEntries = data.extraEntries || [];
                 }
-                document.getElementById('sync-status').textContent = "Data synced successfully!";
+                document.getElementById('sync-status').textContent = "Data synced!";
                 document.getElementById('sync-status').style.color = "#27ae60";
             } catch (err) {
-                console.error("Load error:", err);
                 document.getElementById('sync-status').textContent = "Offline – changes will sync later";
                 document.getElementById('sync-status').style.color = "#e67e22";
             }
@@ -553,14 +508,11 @@
                 await db.doc(DATA_DOC).set({
                     milkEntries,
                     waterEntries,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    extraEntries
                 });
-            } catch (err) {
-                console.error("Save error:", err);
-            }
+            } catch (err) { console.error("Save error:", err); }
         }
 
-        // Check if already logged in on page load/refresh
         document.addEventListener('DOMContentLoaded', () => {
             const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
             const loginPage = document.getElementById('login-page');
@@ -575,461 +527,620 @@
             } else {
                 loginPage.style.display = 'flex';
                 mainApp.style.display = 'none';
-                logoutBtn.style.display = 'none';
             }
 
-            const loginBtn = document.getElementById('login-btn');
-            const passwordInput = document.getElementById('login-password');
-            const errorMsg = document.getElementById('login-error');
-
-            loginBtn.addEventListener('click', () => {
-                const password = passwordInput.value.trim();
-                if (password === APP_PASSWORD) {
+            document.getElementById('login-btn').addEventListener('click', () => {
+                if (document.getElementById('login-password').value === APP_PASSWORD) {
                     localStorage.setItem('isLoggedIn', 'true');
                     loginPage.style.display = 'none';
                     mainApp.style.display = 'block';
                     logoutBtn.style.display = 'block';
                     loadData();
                 } else {
-                    errorMsg.style.display = 'block';
+                    document.getElementById('login-error').style.display = 'block';
                 }
             });
 
-            passwordInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    loginBtn.click();
-                }
-            });
-
-            // Logout button
             logoutBtn.addEventListener('click', () => {
                 localStorage.removeItem('isLoggedIn');
-                loginPage.style.display = 'flex';
-                mainApp.style.display = 'none';
-                logoutBtn.style.display = 'none';
-                // Optionally clear data if you want
-                milkEntries = [];
-                waterEntries = [];
+                location.reload();
             });
         });
 
         function initApp() {
-            const today = new Date();
-            document.getElementById('milk-date').value = today.toISOString().split('T')[0];
-            document.getElementById('water-date').value = today.toISOString().split('T')[0];
+            const today = new Date().toISOString().split('T')[0];
+            ['milk', 'water', 'extra'].forEach(id => document.getElementById(id + '-date').value = today);
 
-            const savedLang = localStorage.getItem('preferredLanguage') || 'en';
-            document.getElementById('language-select').value = savedLang;
+            currentLang = localStorage.getItem('preferredLanguage') || 'en';
+            document.getElementById('language-select').value = currentLang;
+            translatePage();
 
             populateYearMonthSelects();
-            changeLanguage();
             openTab('dashboard');
         }
 
+        function translatePage() {
+            document.querySelectorAll('[data-lang]').forEach(el => {
+                const key = el.getAttribute('data-lang');
+                if (translations[currentLang] && translations[currentLang][key]) {
+                    el.textContent = translations[currentLang][key];
+                }
+            });
+        }
+
+        function changeLanguage() {
+            currentLang = document.getElementById('language-select').value;
+            localStorage.setItem('preferredLanguage', currentLang);
+            translatePage();
+            populateYearMonthSelects();
+            updateDashboard();
+            renderCalendar();
+            renderLists();
+        }
+
         function populateYearMonthSelects() {
-            const years = new Set();
-            const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-            [...milkEntries, ...waterEntries].forEach(e => {
+            const years = new Set([new Date().getFullYear()]);
+            [...milkEntries, ...waterEntries, ...extraEntries].forEach(e => {
                 const d = new Date(e.date);
                 years.add(d.getFullYear());
             });
-            const currentYear = new Date().getFullYear();
-            for (let y = currentYear - 5; y <= currentYear + 1; y++) years.add(y);
-
-            const lang = document.getElementById('language-select').value || 'en';
 
             ['dashboard', 'cal', 'list'].forEach(prefix => {
                 const yearSel = document.getElementById(prefix + '-year');
                 const monthSel = document.getElementById(prefix + '-month');
-                yearSel.innerHTML = '';
-                monthSel.innerHTML = `<option value="all">${translations[lang].all_time}</option>`;
+                yearSel.innerHTML = `<option value="all">All Years</option>`;
+                monthSel.innerHTML = `<option value="all">All Months</option>`;
                 Array.from(years).sort((a,b)=>b-a).forEach(y => {
                     const opt = document.createElement('option');
-                    opt.value = y;
-                    opt.textContent = y;
-                    if (y === currentYear) opt.selected = true;
+                    opt.value = y; opt.textContent = y;
+                    if (y === new Date().getFullYear()) opt.selected = true;
                     yearSel.appendChild(opt);
                 });
-                months.forEach((m, i) => {
+                for (let i = 0; i < 12; i++) {
                     const opt = document.createElement('option');
                     opt.value = i;
-                    opt.textContent = m;
+                    opt.textContent = new Date(2020, i).toLocaleString('default', { month: 'long' });
                     if (i === new Date().getMonth()) opt.selected = true;
                     monthSel.appendChild(opt);
-                });
+                };
             });
         }
 
-        document.getElementById('milk-qty').addEventListener('input', () => {
-            const qty = parseFloat(document.getElementById('milk-qty').value) || 0;
-            document.getElementById('milk-total').textContent = `Total: ₹${(qty * MILK_PRICE).toFixed(2)}`;
-        });
-
-        document.getElementById('water-qty').addEventListener('input', () => {
-            const qty = parseFloat(document.getElementById('water-qty').value) || 0;
-            document.getElementById('water-total').textContent = `Total: ₹${(qty * WATER_PRICE).toFixed(2)}`;
-        });
-
-        document.getElementById('milk-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const qty = parseFloat(document.getElementById('milk-qty').value);
-            milkEntries.push({
-                date: document.getElementById('milk-date').value,
-                qty: qty,
-                amount: qty * MILK_PRICE
+        // Preview multiple photos when adding
+        document.getElementById('extra-photos').addEventListener('change', e => {
+            const files = e.target.files;
+            const preview = document.getElementById('extra-photo-preview');
+            preview.innerHTML = '';
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = ev => {
+                    const img = document.createElement('img');
+                    img.src = ev.target.result;
+                    img.className = 'photo-preview';
+                    preview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
             });
+        });
+
+        // Add Extra Expense with multiple photos
+        document.getElementById('extra-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const files = document.getElementById('extra-photos').files;
+            const photos = [];
+            for (let file of files) {
+                const dataUrl = await new Promise(resolve => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.readAsDataURL(file);
+                });
+                photos.push(dataUrl);
+            }
+
+            extraEntries.push({
+                date: document.getElementById('extra-date').value,
+                category: document.getElementById('extra-category').value,
+                description: document.getElementById('extra-desc').value.trim(),
+                amount: parseFloat(document.getElementById('extra-amount').value),
+                photos: photos
+            });
+
             await saveData();
             e.target.reset();
-            document.getElementById('milk-total').textContent = 'Total: ₹0';
-            populateYearMonthSelects();
-            updateDashboard();
-            renderCalendar();
+            document.getElementById('extra-photo-preview').innerHTML = '';
             renderLists();
+            updateDashboard();
         });
 
-        document.getElementById('water-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const qty = parseFloat(document.getElementById('water-qty').value);
-            waterEntries.push({
-                date: document.getElementById('water-date').value,
-                qty: qty,
-                amount: qty * WATER_PRICE
+        // Milk & Water quantity preview and submit
+        ['milk', 'water'].forEach(type => {
+            document.getElementById(type + '-qty').addEventListener('input', () => {
+                const qty = parseFloat(document.getElementById(type + '-qty').value) || 0;
+                const price = type === 'milk' ? MILK_PRICE : WATER_PRICE;
+                document.getElementById(type + '-total').textContent = `Total: ₹${(qty * price).toFixed(2)}`;
             });
-            await saveData();
-            e.target.reset();
-            document.getElementById('water-total').textContent = 'Total: ₹0';
-            populateYearMonthSelects();
-            updateDashboard();
-            renderCalendar();
-            renderLists();
+
+            document.getElementById(type + '-form').addEventListener('submit', async e => {
+                e.preventDefault();
+                const qty = parseFloat(document.getElementById(type + '-qty').value);
+                const entries = type === 'milk' ? milkEntries : waterEntries;
+                const price = type === 'milk' ? MILK_PRICE : WATER_PRICE;
+                entries.push({
+                    date: document.getElementById(type + '-date').value,
+                    qty: qty,
+                    amount: qty * price
+                });
+                await saveData();
+                e.target.reset();
+                document.getElementById(type + '-total').textContent = 'Total: ₹0';
+                renderLists();
+                updateDashboard();
+                renderCalendar();
+            });
         });
 
         function getFilteredEntries(month, year) {
             const isAllMonth = month === 'all';
             const isAllYear = year === 'all';
-
-            const filterFunc = e => {
+            const filter = e => {
                 const d = new Date(e.date);
-                const matchMonth = isAllMonth || d.getMonth() === parseInt(month);
-                const matchYear = isAllYear || d.getFullYear() === parseInt(year);
-                return matchMonth && matchYear;
+                return (isAllMonth || d.getMonth() === parseInt(month)) && (isAllYear || d.getFullYear() === parseInt(year));
             };
-
             return {
-                milk: milkEntries.filter(filterFunc),
-                water: waterEntries.filter(filterFunc)
+                milk: milkEntries.filter(filter),
+                water: waterEntries.filter(filter),
+                extra: extraEntries.filter(filter)
             };
         }
 
         function updateDashboard() {
             const month = document.getElementById('dashboard-month').value;
             const year = document.getElementById('dashboard-year').value;
-            const { milk, water } = getFilteredEntries(month, year);
+            const { milk, water, extra } = getFilteredEntries(month, year);
 
             const milkLtr = milk.reduce((s, e) => s + e.qty, 0);
             const milkAmt = milk.reduce((s, e) => s + e.amount, 0);
             const waterBtl = water.reduce((s, e) => s + e.qty, 0);
             const waterAmt = water.reduce((s, e) => s + e.amount, 0);
+            const extraAmt = extra.reduce((s, e) => s + e.amount, 0);
 
             document.getElementById('dash-milk-ltr').textContent = milkLtr.toFixed(1);
             document.getElementById('dash-milk-amt').textContent = `₹${milkAmt.toFixed(2)}`;
             document.getElementById('dash-water-btl').textContent = waterBtl;
             document.getElementById('dash-water-amt').textContent = `₹${waterAmt.toFixed(2)}`;
-            document.getElementById('dash-total').textContent = `₹${(milkAmt + waterAmt).toFixed(2)}`;
+            document.getElementById('dash-extra-amt').textContent = `₹${extraAmt.toFixed(2)}`;
+            document.getElementById('dash-total').textContent = `₹${(milkAmt + waterAmt + extraAmt).toFixed(2)}`;
 
             if (monthlyChart) monthlyChart.destroy();
             monthlyChart = new Chart(document.getElementById('monthlyChart'), {
                 type: 'bar',
                 data: {
-                    labels: ['Milk', 'Water'],
+                    labels: ['Milk', 'Water', 'Extra'],
                     datasets: [{
                         label: 'Expense (₹)',
-                        data: [milkAmt, waterAmt],
-                        backgroundColor: ['#3498db', '#e74c3c']
+                        data: [milkAmt, waterAmt, extraAmt],
+                        backgroundColor: ['#3498db', '#e74c3c', '#9b59b6']
                     }]
                 },
                 options: { responsive: true, scales: { y: { beginAtZero: true } } }
             });
         }
 
+        // PDF Generation with photos in Extra report (up to 3 photos per row)
         function generateMilkPDF() {
-            const month = document.getElementById('dashboard-month').value;
-            const year = document.getElementById('dashboard-year').value;
-            const { milk } = getFilteredEntries(month, year);
-
-            const period = month === 'all' && year === 'all' ? 'All Time' : 
-                          month === 'all' ? year : 
-                          `${new Date(2020, parseInt(month)).toLocaleString('default', { month: 'long' })} ${year}`;
-
+            const { milk } = getFilteredEntries(document.getElementById('dashboard-month').value, document.getElementById('dashboard-year').value);
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            doc.setFontSize(20);
-            doc.text('Milk Expenses Report', 105, 20, { align: 'center' });
-            doc.setFontSize(14);
-            doc.text(`Period: ${period}`, 105, 30, { align: 'center' });
-
-            const tableData = milk.map(e => [e.date, e.qty.toFixed(1) + ' Ltr', 'Rs ' + e.amount.toFixed(2)]);
-            const totalLtr = milk.reduce((s, e) => s + e.qty, 0);
-            const totalAmt = milk.reduce((s, e) => s + e.amount, 0);
-
-            doc.autoTable({
-                head: [['Date', 'Quantity', 'Amount']],
-                body: tableData,
-                startY: 40,
-                theme: 'grid'
-            });
-
-            doc.setFontSize(14);
-            doc.text(`Total: ${totalLtr.toFixed(1)} Ltr   Rs ${totalAmt.toFixed(2)}`, 14, doc.lastAutoTable.finalY + 10);
-
-            doc.save(`Milk_Report_${period.replace(/ /g, '_')}.pdf`);
+            doc.text('Milk Report', 105, 20, { align: 'center' });
+            const body = milk.map(e => [e.date, e.qty.toFixed(1) + ' Ltr', 'Rs ' + e.amount.toFixed(2)]);
+            doc.autoTable({ head: [['Date', 'Quantity', 'Amount']], body, startY: 30 });
+            doc.text(`Total: Rs ${milk.reduce((s,e)=>s+e.amount,0).toFixed(2)}`, 14, doc.lastAutoTable.finalY + 10);
+            doc.save('Milk_Report.pdf');
         }
 
         function generateWaterPDF() {
-            const month = document.getElementById('dashboard-month').value;
-            const year = document.getElementById('dashboard-year').value;
-            const { water } = getFilteredEntries(month, year);
-
-            const period = month === 'all' && year === 'all' ? 'All Time' : 
-                          month === 'all' ? year : 
-                          `${new Date(2020, parseInt(month)).toLocaleString('default', { month: 'long' })} ${year}`;
-
+            const { water } = getFilteredEntries(document.getElementById('dashboard-month').value, document.getElementById('dashboard-year').value);
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            doc.setFontSize(20);
-            doc.text('Water Expenses Report', 105, 20, { align: 'center' });
-            doc.setFontSize(14);
-            doc.text(`Period: ${period}`, 105, 30, { align: 'center' });
+            doc.text('Water Report', 105, 20, { align: 'center' });
+            const body = water.map(e => [e.date, e.qty + ' Btl', 'Rs ' + e.amount.toFixed(2)]);
+            doc.autoTable({ head: [['Date', 'Quantity', 'Amount']], body, startY: 30 });
+            doc.text(`Total: Rs ${water.reduce((s,e)=>s+e.amount,0).toFixed(2)}`, 14, doc.lastAutoTable.finalY + 10);
+            doc.save('Water_Report.pdf');
+        }
 
-            const tableData = water.map(e => [e.date, e.qty + ' Bottles', 'Rs ' + e.amount.toFixed(2)]);
-            const totalBtl = water.reduce((s, e) => s + e.qty, 0);
-            const totalAmt = water.reduce((s, e) => s + e.amount, 0);
+        function generateExtraPDF() {
+            const { extra } = getFilteredEntries(document.getElementById('dashboard-month').value, document.getElementById('dashboard-year').value);
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l', 'mm', 'a4'); // landscape for more space for photos
+            doc.text('Extra Expenses Report', 148, 20, { align: 'center' });
+
+            const body = extra.map(e => [e.date, e.category, e.description, 'Rs ' + e.amount.toFixed(2), (e.photos && e.photos.length > 0) ? e.photos.length + ' photo(s)' : 'No photo']);
 
             doc.autoTable({
-                head: [['Date', 'Quantity', 'Amount']],
-                body: tableData,
-                startY: 40,
-                theme: 'grid'
+                head: [['Date', 'Category', 'Description', 'Amount', 'Photos']],
+                body: body,
+                startY: 30,
+                didDrawCell: (data) => {
+                    if (data.column.index === 4 && data.section === 'body' && extra[data.row.index].photos && extra[data.row.index].photos.length > 0) {
+                        const photos = extra[data.row.index].photos;
+                        let x = data.cell.x + 2;
+                        let y = data.cell.y + 2;
+                        const imgWidth = 20;
+                        const imgHeight = 20;
+                        photos.slice(0, 3).forEach(photo => {
+                            doc.addImage(photo, 'JPEG', x, y, imgWidth, imgHeight);
+                            x += imgWidth + 2;
+                            if (x > data.cell.x + data.cell.width - imgWidth) {
+                                x = data.cell.x + 2;
+                                y += imgHeight + 2;
+                            }
+                        });
+                        if (photos.length > 3) {
+                            doc.setFontSize(10);
+                            doc.text('...', data.cell.x + data.cell.width - 10, data.cell.y + data.cell.height - 5);
+                        }
+                    }
+                }
             });
-
-            doc.setFontSize(14);
-            doc.text(`Total: ${totalBtl} Bottles   Rs ${totalAmt.toFixed(2)}`, 14, doc.lastAutoTable.finalY + 10);
-
-            doc.save(`Water_Report_${period.replace(/ /g, '_')}.pdf`);
+            doc.text(`Total: Rs ${extra.reduce((s,e)=>s+e.amount,0).toFixed(2)}`, 14, doc.lastAutoTable.finalY + 10);
+            doc.save('Extra_Report.pdf');
         }
 
         function renderCalendar() {
-            const monthSel = document.getElementById('cal-month').value;
-            const yearSel = document.getElementById('cal-year').value;
+            const monthVal = document.getElementById('cal-month').value;
+            const yearVal = document.getElementById('cal-year').value;
+            const month = monthVal === 'all' ? null : parseInt(monthVal);
+            const year = yearVal === 'all' ? null : parseInt(yearVal);
+
             const container = document.getElementById('calendar-container');
             container.innerHTML = '';
 
-            const lang = document.getElementById('language-select').value || 'en';
+            const allEntries = [...milkEntries.map(e => ({...e, type: 'milk'})), ...waterEntries.map(e => ({...e, type: 'water'}))];
 
-            let entriesList = [];
-            let grandTotal = 0;
+            const filtered = allEntries.filter(e => {
+                const d = new Date(e.date);
+                return (!month || d.getMonth() === month) && (!year || d.getFullYear() === year);
+            });
 
-            if (monthSel === 'all' && yearSel === 'all') {
-                entriesList = [...milkEntries, ...waterEntries].map((e, i) => ({
-                    entry: e,
-                    type: milkEntries.includes(e) ? 'milk' : 'water',
-                    index: milkEntries.includes(e) ? milkEntries.indexOf(e) : waterEntries.indexOf(e)
-                }));
-                grandTotal = entriesList.reduce((s, item) => s + item.entry.amount, 0);
-            } else if (monthSel === 'all') {
-                const year = parseInt(yearSel);
-                entriesList = [...milkEntries, ...waterEntries].filter(e => new Date(e.date).getFullYear() === year).map((e, i) => ({
-                    entry: e,
-                    type: milkEntries.includes(e) ? 'milk' : 'water',
-                    index: milkEntries.includes(e) ? milkEntries.indexOf(e) : waterEntries.indexOf(e)
-                }));
-                grandTotal = entriesList.reduce((s, item) => s + item.entry.amount, 0);
-            } else {
-                const month = parseInt(monthSel);
-                const year = parseInt(yearSel);
-                entriesList = [...milkEntries, ...waterEntries].filter(e => new Date(e.date).getFullYear() === year && new Date(e.date).getMonth() === month).map((e, i) => ({
-                    entry: e,
-                    type: milkEntries.includes(e) ? 'milk' : 'water',
-                    index: milkEntries.includes(e) ? milkEntries.indexOf(e) : waterEntries.indexOf(e)
-                }));
-                grandTotal = entriesList.reduce((s, item) => s + item.entry.amount, 0);
+            if (filtered.length === 0) {
+                container.innerHTML = '<p>No entries in selected period.</p>';
+                return;
             }
 
+            // Group by month/year
             const grouped = {};
-            entriesList.forEach(item => {
-                const d = new Date(item.entry.date);
-                const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2, '0')}`;
-                if (!grouped[key]) grouped[key] = { entries: [], total: 0 };
-                grouped[key].entries.push(item);
-                grouped[key].total += item.entry.amount;
+            filtered.forEach(e => {
+                const d = new Date(e.date);
+                const key = `${d.getFullYear()}-${d.getMonth()}`;
+                if (!grouped[key]) grouped[key] = [];
+                grouped[key].push(e);
             });
 
             Object.keys(grouped).sort((a,b) => b.localeCompare(a)).forEach(key => {
                 const [y, m] = key.split('-').map(Number);
-                renderSingleMonthCalendar(container, m, y, grouped[key].entries, grouped[key].total);
+                const monthEntries = grouped[key];
+
+                const monthDiv = document.createElement('div');
+                monthDiv.style.marginBottom = '40px';
+
+                const title = document.createElement('h3');
+                title.textContent = new Date(y, m).toLocaleString('default', { month: 'long', year: 'numeric' });
+                monthDiv.appendChild(title);
+
+                const header = document.createElement('div');
+                header.className = 'calendar-header';
+                ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
+                    const div = document.createElement('div');
+                    div.textContent = day;
+                    header.appendChild(div);
+                });
+                monthDiv.appendChild(header);
+
+                const grid = document.createElement('div');
+                grid.className = 'calendar-grid';
+
+                const firstDay = new Date(y, m, 1).getDay();
+                const daysInMonth = new Date(y, m + 1, 0).getDate();
+
+                const dayMap = {};
+                monthEntries.forEach(e => {
+                    const day = new Date(e.date).getDate();
+                    if (!dayMap[day]) dayMap[day] = { milk: 0, water: 0, total: 0 };
+                    if (e.type === 'milk') dayMap[day].milk += e.qty;
+                    else dayMap[day].water += e.qty;
+                    dayMap[day].total += e.amount;
+                });
+
+                for (let i = 0; i < firstDay; i++) {
+                    const empty = document.createElement('div');
+                    grid.appendChild(empty);
+                }
+
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'calendar-day';
+                    if (dayMap[day]) cell.classList.add('has-entry');
+                    cell.innerHTML = `<div class="day-number">${day}</div>`;
+                    if (dayMap[day]) {
+                        const entriesDiv = document.createElement('div');
+                        entriesDiv.className = 'day-entries';
+                        if (dayMap[day].milk > 0) entriesDiv.innerHTML += `Milk: ${dayMap[day].milk.toFixed(1)}L<br>`;
+                        if (dayMap[day].water > 0) entriesDiv.innerHTML += `Water: ${dayMap[day].water}B<br>`;
+                        entriesDiv.innerHTML += `₹${dayMap[day].total.toFixed(2)}`;
+                        cell.appendChild(entriesDiv);
+                    }
+                    grid.appendChild(cell);
+                }
+
+                monthDiv.appendChild(grid);
+                container.appendChild(monthDiv);
             });
-
-            if (grandTotal > 0 && (monthSel === 'all' || yearSel === 'all')) {
-                const grand = document.createElement('div');
-                grand.className = 'grand-total';
-                grand.textContent = `${translations[lang].grand_total}: ₹${grandTotal.toFixed(2)}`;
-                container.appendChild(grand);
-            }
-
-            updateDynamicTranslations();
         }
 
-        function renderSingleMonthCalendar(container, month, year, entriesList, monthTotal) {
-            const lang = document.getElementById('language-select').value || 'en';
-            const monthName = new Date(year, month).toLocaleString('default', { month: 'long', year: 'numeric' });
+        function renderMilkWaterList(containerId, data, type) {
+            const cont = document.getElementById(containerId);
+            cont.innerHTML = data.length === 0 ? '<div class="no-data">No entries</div>' : '';
 
-            const monthDiv = document.createElement('div');
-            monthDiv.className = 'month-calendar';
-            monthDiv.innerHTML = `<h2>${monthName}</h2>`;
+            if (data.length === 0) return;
 
-            const header = document.createElement('div');
-            header.className = 'calendar-header';
-            ['sun','mon','tue','wed','thu','fri','sat'].forEach(day => {
-                const div = document.createElement('div');
-                div.textContent = translations[lang][day];
-                header.appendChild(div);
+            const table = document.createElement('table');
+            table.innerHTML = `<thead><tr><th>Date</th><th>Quantity</th><th>Amount</th><th>Actions</th></tr></thead><tbody></tbody>`;
+            const tbody = table.querySelector('tbody');
+
+            data.forEach(e => {
+                const idx = (type === 'milk' ? milkEntries : waterEntries).indexOf(e);
+                const row = document.createElement('tr');
+                row.innerHTML = `<td>${e.date}</td><td>${type === 'milk' ? e.qty.toFixed(1) : e.qty} ${type === 'milk' ? 'Ltr' : 'Btl'}</td><td class="amount">₹${e.amount.toFixed(2)}</td><td class="actions"></td>`;
+                const actions = row.querySelector('.actions');
+                const editBtn = document.createElement('button');
+                editBtn.className = 'edit-btn';
+                editBtn.textContent = 'Edit';
+                const delBtn = document.createElement('button');
+                delBtn.className = 'delete-btn';
+                delBtn.textContent = 'Delete';
+                actions.append(editBtn, delBtn);
+
+                editBtn.onclick = () => {
+                    const qtyCell = row.cells[1];
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.value = e.qty;
+                    input.step = type === 'milk' ? '0.5' : '1';
+                    qtyCell.innerHTML = '';
+                    qtyCell.appendChild(input);
+
+                    editBtn.textContent = 'Save';
+                    editBtn.className = 'save-btn';
+                    editBtn.onclick = async () => {
+                        const newQty = parseFloat(input.value);
+                        if (!isNaN(newQty) && newQty >= 0) {
+                            const entries = type === 'milk' ? milkEntries : waterEntries;
+                            entries[idx].qty = newQty;
+                            entries[idx].amount = newQty * (type === 'milk' ? MILK_PRICE : WATER_PRICE);
+                            await saveData();
+                            renderLists();
+                            updateDashboard();
+                            renderCalendar();
+                        }
+                    };
+
+                    const cancelBtn = document.createElement('button');
+                    cancelBtn.className = 'cancel-btn';
+                    cancelBtn.textContent = 'Cancel';
+                    cancelBtn.onclick = () => renderLists();
+                    actions.insertBefore(cancelBtn, delBtn);
+                    delBtn.style.display = 'none';
+                };
+
+                delBtn.onclick = async () => {
+                    if (confirm('Delete this entry?')) {
+                        (type === 'milk' ? milkEntries : waterEntries).splice(idx, 1);
+                        await saveData();
+                        renderLists();
+                        updateDashboard();
+                        renderCalendar();
+                    }
+                };
+
+                tbody.appendChild(row);
             });
-            monthDiv.appendChild(header);
+            cont.appendChild(table);
+        }
 
-            const grid = document.createElement('div');
-            grid.className = 'calendar-grid';
+        function renderExtraList() {
+            const month = document.getElementById('list-month').value;
+            const year = document.getElementById('list-year').value;
+            let filtered = getFilteredEntries(month, year).extra;
+            filtered = filtered.sort((a, b) => b.date.localeCompare(a.date));
 
-            const firstDay = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const cont = document.getElementById('extra-list');
+            cont.innerHTML = filtered.length === 0 ? '<div class="no-data">No extra expenses</div>' : '';
 
-            const dayEntries = {};
-            entriesList.forEach(item => {
-                const d = new Date(item.entry.date);
-                const day = d.getDate();
-                if (d.getMonth() === month && d.getFullYear() === year) {
-                    if (!dayEntries[day]) dayEntries[day] = [];
-                    dayEntries[day].push(item);
-                }
-            });
-
-            for (let i = 0; i < firstDay; i++) {
-                const empty = document.createElement('div');
-                empty.className = 'calendar-day other-month';
-                grid.appendChild(empty);
+            if (filtered.length === 0) {
+                document.getElementById('extra-total').style.display = 'none';
+                return;
             }
 
-            for (let day = 1; day <= daysInMonth; day++) {
-                const div = document.createElement('div');
-                div.className = 'calendar-day';
-                if (dayEntries[day]) div.classList.add('has-entry');
-                div.innerHTML = `<strong>${day}</strong>`;
-                if (dayEntries[day]) {
-                    const detail = document.createElement('div');
-                    detail.className = 'entry-detail';
-                    let milkQty = 0, waterQty = 0;
-                    dayEntries[day].forEach(item => {
-                        if (item.type === 'milk') milkQty += item.entry.qty;
-                        else waterQty += item.entry.qty;
+            const table = document.createElement('table');
+            table.innerHTML = `<thead><tr><th>Date</th><th>Category</th><th>Description</th><th class="amount">Amount</th><th>Photos</th><th class="actions">Actions</th></tr></thead><tbody></tbody>`;
+            const tbody = table.querySelector('tbody');
+            let total = 0;
+
+            filtered.forEach(e => {
+                const idx = extraEntries.indexOf(e);
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${e.date}</td>
+                    <td>${e.category}</td>
+                    <td>${e.description}</td>
+                    <td class="amount">₹${e.amount.toFixed(2)}</td>
+                    <td class="photo-gallery"></td>
+                    <td class="actions"></td>
+                `;
+                total += e.amount;
+
+                const photoCell = row.cells[4];
+                if (e.photos && e.photos.length > 0) {
+                    e.photos.forEach(photo => {
+                        const wrapper = document.createElement('div');
+                        wrapper.className = 'photo-wrapper';
+                        const img = document.createElement('img');
+                        img.src = photo;
+                        img.className = 'photo-preview';
+                        img.onclick = () => {
+                            document.getElementById('modal-photo').src = photo;
+                            document.getElementById('photo-modal').style.display = 'flex';
+                        };
+                        wrapper.appendChild(img);
+                        photoCell.appendChild(wrapper);
                     });
-                    if (milkQty > 0) detail.innerHTML += `Milk: ${milkQty.toFixed(1)} L<br>`;
-                    if (waterQty > 0) detail.innerHTML += `Water: ${waterQty} Btl<br>`;
+                } else {
+                    photoCell.textContent = '-';
+                }
 
-                    const actions = document.createElement('div');
-                    actions.className = 'entry-actions';
-                    dayEntries[day].forEach(item => {
-                        const actionRow = document.createElement('div');
-                        actionRow.style.display = 'flex';
-                        actionRow.style.gap = '5px';
-                        actionRow.style.alignItems = 'center';
-                        actionRow.style.flexWrap = 'wrap';
+                const actions = row.cells[5];
+                const editBtn = document.createElement('button');
+                editBtn.className = 'edit-btn';
+                editBtn.textContent = 'Edit';
+                const delBtn = document.createElement('button');
+                delBtn.className = 'delete-btn';
+                delBtn.textContent = 'Delete';
+                actions.append(editBtn, delBtn);
 
-                        const qtySpan = document.createElement('span');
-                        qtySpan.className = 'qty-display';
-                        qtySpan.textContent = item.entry.qty;
-                        actionRow.appendChild(qtySpan);
-                        actionRow.appendChild(document.createTextNode(item.type === 'milk' ? ' L' : ' Btl'));
+                editBtn.onclick = () => {
+                    const cells = row.cells;
 
-                        const editBtn = document.createElement('button');
-                        editBtn.className = 'edit-btn';
-                        editBtn.textContent = translations[lang].edit;
-                        actionRow.appendChild(editBtn);
+                    const dateInput = document.createElement('input');
+                    dateInput.type = 'date';
+                    dateInput.value = e.date;
+                    cells[0].innerHTML = '';
+                    cells[0].appendChild(dateInput);
 
-                        const deleteBtn = document.createElement('button');
-                        deleteBtn.className = 'delete-btn';
-                        deleteBtn.textContent = translations[lang].delete;
-                        actionRow.appendChild(deleteBtn);
+                    const catSelect = document.createElement('select');
+                    ['Utensils','Repairs','Electricity Bill','Mobile Bill','Gas Bill','Event','Grocery','Other'].forEach(c => {
+                        const o = document.createElement('option');
+                        o.value = c;
+                        o.textContent = c;
+                        if (c === e.category) o.selected = true;
+                        catSelect.appendChild(o);
+                    });
+                    cells[1].innerHTML = '';
+                    cells[1].appendChild(catSelect);
 
-                        actions.appendChild(actionRow);
+                    const descInput = document.createElement('input');
+                    descInput.type = 'text';
+                    descInput.value = e.description;
+                    cells[2].innerHTML = '';
+                    cells[2].appendChild(descInput);
 
-                        editBtn.onclick = function() {
-                            const input = document.createElement('input');
-                            input.type = 'number';
-                            input.value = item.entry.qty;
-                            input.step = item.type === 'milk' ? '0.5' : '1';
-                            input.min = '0';
-                            input.className = 'editable-input';
+                    const amtInput = document.createElement('input');
+                    amtInput.type = 'number';
+                    amtInput.step = '0.01';
+                    amtInput.value = e.amount;
+                    cells[3].innerHTML = '';
+                    cells[3].appendChild(amtInput);
 
-                            qtySpan.style.display = 'none';
-                            actionRow.insertBefore(input, qtySpan.nextSibling);
+                    // Photo editing
+                    photoCell.innerHTML = '<input type="file" multiple accept="image/*"><div class="photo-gallery"></div>';
+                    const newFileInput = photoCell.querySelector('input');
+                    const gallery = photoCell.querySelector('.photo-gallery');
 
-                            this.textContent = translations[lang].save;
-                            this.className = 'save-btn';
-                            this.onclick = async function() {
-                                await saveCalendarEntry(item.index, item.type, input.value);
+                    // Load current photos with remove button
+                    (e.photos || []).forEach(photo => {
+                        const wrapper = document.createElement('div');
+                        wrapper.className = 'photo-wrapper';
+                        const img = document.createElement('img');
+                        img.src = photo;
+                        img.className = 'photo-preview';
+                        img.onclick = () => {
+                            document.getElementById('modal-photo').src = photo;
+                            document.getElementById('photo-modal').style.display = 'flex';
+                        };
+                        const removeBtn = document.createElement('button');
+                        removeBtn.className = 'remove-photo-btn';
+                        removeBtn.textContent = 'Remove';
+                        removeBtn.onclick = (ev) => {
+                            ev.stopPropagation();
+                            wrapper.remove();
+                        };
+                        wrapper.append(img, removeBtn);
+                        gallery.appendChild(wrapper);
+                    });
+
+                    // Preview new photos
+                    newFileInput.addEventListener('change', () => {
+                        Array.from(newFileInput.files).forEach(file => {
+                            const reader = new FileReader();
+                            reader.onload = ev => {
+                                const wrapper = document.createElement('div');
+                                wrapper.className = 'photo-wrapper';
+                                const img = document.createElement('img');
+                                img.src = ev.target.result;
+                                img.className = 'photo-preview';
+                                wrapper.appendChild(img);
+                                gallery.appendChild(wrapper);
                             };
-
-                            const cancelBtn = document.createElement('button');
-                            cancelBtn.className = 'cancel-btn';
-                            cancelBtn.textContent = translations[lang].cancel;
-                            cancelBtn.onclick = () => renderCalendar();
-                            actionRow.insertBefore(cancelBtn, deleteBtn);
-
-                            deleteBtn.style.display = 'none';
-                        };
-
-                        deleteBtn.onclick = async () => {
-                            if (confirm(translations[lang].confirm_delete)) {
-                                await deleteCalendarEntry(item.index, item.type);
-                            }
-                        };
+                            reader.readAsDataURL(file);
+                        });
                     });
-                    detail.appendChild(actions);
-                    div.appendChild(detail);
-                }
-                grid.appendChild(div);
-            }
 
-            monthDiv.appendChild(grid);
+                    editBtn.textContent = 'Save';
+                    editBtn.className = 'save-btn';
+                    editBtn.onclick = async () => {
+                        const finalPhotos = [];
+                        gallery.querySelectorAll('.photo-wrapper').forEach(wrapper => {
+                            const img = wrapper.querySelector('img');
+                            if (img) finalPhotos.push(img.src);
+                        });
 
-            if (monthTotal > 0) {
-                const totalDiv = document.createElement('div');
-                totalDiv.className = 'month-total';
-                totalDiv.textContent = `${translations[lang].month_total}: ₹${monthTotal.toFixed(2)}`;
-                monthDiv.appendChild(totalDiv);
-            }
+                        if (newFileInput.files.length > 0) {
+                            for (let file of newFileInput.files) {
+                                const dataUrl = await new Promise(r => {
+                                    const reader = new FileReader();
+                                    reader.onload = () => r(reader.result);
+                                    reader.readAsDataURL(file);
+                                });
+                                finalPhotos.push(dataUrl);
+                            }
+                        }
 
-            container.appendChild(monthDiv);
-        }
+                        extraEntries[idx] = {
+                            date: dateInput.value,
+                            category: catSelect.value,
+                            description: descInput.value.trim(),
+                            amount: parseFloat(amtInput.value),
+                            photos: finalPhotos
+                        };
 
-        async function saveCalendarEntry(index, type, newQtyStr) {
-            const newQty = parseFloat(newQtyStr);
-            if (isNaN(newQty) || newQty < 0) { alert('Invalid quantity'); return; }
-            const entries = type === 'milk' ? milkEntries : waterEntries;
-            entries[index].qty = newQty;
-            entries[index].amount = newQty * (type === 'milk' ? MILK_PRICE : WATER_PRICE);
-            await saveData();
-            renderCalendar();
-            renderLists();
-            updateDashboard();
-        }
+                        await saveData();
+                        renderLists();
+                        updateDashboard();
+                    };
 
-        async function deleteCalendarEntry(index, type) {
-            const entries = type === 'milk' ? milkEntries : waterEntries;
-            entries.splice(index, 1);
-            await saveData();
-            renderCalendar();
-            renderLists();
-            updateDashboard();
+                    const cancelBtn = document.createElement('button');
+                    cancelBtn.className = 'cancel-btn';
+                    cancelBtn.textContent = 'Cancel';
+                    cancelBtn.onclick = () => renderLists();
+                    actions.insertBefore(cancelBtn, delBtn);
+                    delBtn.style.display = 'none';
+                };
+
+                delBtn.onclick = async () => {
+                    if (confirm('Delete this extra expense?')) {
+                        extraEntries.splice(idx, 1);
+                        await saveData();
+                        renderLists();
+                        updateDashboard();
+                    }
+                };
+
+                tbody.appendChild(row);
+            });
+
+            cont.appendChild(table);
+            document.getElementById('extra-total').textContent = `Total Extra: ₹${total.toFixed(2)}`;
+            document.getElementById('extra-total').style.display = 'block';
         }
 
         function renderLists() {
@@ -1037,160 +1148,27 @@
             const year = document.getElementById('list-year').value;
             const { milk, water } = getFilteredEntries(month, year);
 
-            const lang = document.getElementById('language-select').value || 'en';
+            renderMilkWaterList('milk-list', milk, 'milk');
+            renderMilkWaterList('water-list', water, 'water');
+            renderExtraList();
 
-            const renderTable = (containerId, data, type) => {
-                const container = document.getElementById(containerId);
-                container.innerHTML = '';
-                if (data.length === 0) {
-                    container.innerHTML = '<div class="no-data">No entries</div>';
-                    return;
-                }
-                const table = document.createElement('table');
-                table.innerHTML = `<thead><tr><th>Date</th><th>Quantity</th><th>Amount</th><th class="actions">Actions</th></tr></thead><tbody></tbody>`;
-                const tbody = table.querySelector('tbody');
-                let total = 0;
-                data.forEach(e => {
-                    const row = document.createElement('tr');
-                    const index = type === 'milk' ? milkEntries.indexOf(e) : waterEntries.indexOf(e);
-                    row.innerHTML = `
-                        <td>${e.date}</td>
-                        <td><span class="qty-display">${type === 'milk' ? e.qty.toFixed(1) : e.qty}</span> ${type === 'milk' ? 'Ltr' : 'Bottles'}</td>
-                        <td class="amount">₹${e.amount.toFixed(2)}</td>
-                        <td class="actions">
-                            <button class="edit-btn">${translations[lang].edit}</button>
-                            <button class="delete-btn">${translations[lang].delete}</button>
-                        </td>
-                    `;
-                    const actionsCell = row.querySelector('.actions');
-                    const editBtn = actionsCell.querySelector('.edit-btn');
-                    editBtn.onclick = function() {
-                        const qtyCell = row.cells[1];
-                        const qtySpan = qtyCell.querySelector('.qty-display');
-                        const input = document.createElement('input');
-                        input.type = 'number';
-                        input.value = qtySpan.textContent;
-                        input.step = type === 'milk' ? '0.5' : '1';
-                        input.min = '0';
-                        input.className = 'editable-input';
-                        qtySpan.style.display = 'none';
-                        qtyCell.insertBefore(input, qtySpan.nextSibling);
-
-                        this.textContent = translations[lang].save;
-                        this.className = 'save-btn';
-                        this.onclick = async function() {
-                            await saveListEntry(index, type, input.value);
-                        };
-
-                        const cancelBtn = document.createElement('button');
-                        cancelBtn.className = 'cancel-btn';
-                        cancelBtn.textContent = translations[lang].cancel;
-                        cancelBtn.onclick = () => renderLists();
-                        actionsCell.appendChild(cancelBtn);
-
-                        const deleteBtn = actionsCell.querySelector('.delete-btn');
-                        deleteBtn.style.display = 'none';
-                    };
-
-                    const deleteBtn = actionsCell.querySelector('.delete-btn');
-                    deleteBtn.onclick = async () => {
-                        if (confirm(translations[lang].confirm_delete)) {
-                            await deleteListEntry(index, type);
-                        }
-                    };
-
-                    tbody.appendChild(row);
-                    total += e.amount;
-                });
-                container.appendChild(table);
-                if (total > 0) {
-                    const totalRow = document.createElement('div');
-                    totalRow.className = 'month-total';
-                    totalRow.textContent = `${translations[lang].month_total}: ₹${total.toFixed(2)}`;
-                    container.appendChild(totalRow);
-                }
-            };
-
-            renderTable('milk-list', milk, 'milk');
-            renderTable('water-list', water, 'water');
+            const grandTotal = milk.reduce((s,e)=>s+e.amount,0) + water.reduce((s,e)=>s+e.amount,0) +
+                extraEntries.filter(e => {
+                    const d = new Date(e.date);
+                    return (month === 'all' || d.getMonth() === parseInt(month)) && (year === 'all' || d.getFullYear() === parseInt(year));
+                }).reduce((s,e)=>s+e.amount,0);
 
             const grandDiv = document.getElementById('list-grand-total');
-            const allTotal = milk.reduce((s, e) => s + e.amount, 0) + water.reduce((s, e) => s + e.amount, 0);
-            if (allTotal > 0) {
-                let text = translations[lang].grand_total;
-                if (month !== 'all' && year !== 'all') text = translations[lang].month_total;
-                else if (month === 'all' && year !== 'all') text = `${translations[lang].year_total} (${year})`;
-                grandDiv.textContent = `${text}: ₹${allTotal.toFixed(2)}`;
+            if (grandTotal > 0) {
+                grandDiv.textContent = `Grand Total: ₹${grandTotal.toFixed(2)}`;
                 grandDiv.style.display = 'block';
             } else {
                 grandDiv.style.display = 'none';
             }
-
-            updateDynamicTranslations();
-        }
-
-        async function saveListEntry(index, type, newQtyStr) {
-            const newQty = parseFloat(newQtyStr);
-            if (isNaN(newQty) || newQty < 0) { alert('Invalid quantity'); return; }
-            const entries = type === 'milk' ? milkEntries : waterEntries;
-            entries[index].qty = newQty;
-            entries[index].amount = newQty * (type === 'milk' ? MILK_PRICE : WATER_PRICE);
-            await saveData();
-            renderLists();
-            renderCalendar();
-            updateDashboard();
-        }
-
-        async function deleteListEntry(index, type) {
-            const entries = type === 'milk' ? milkEntries : waterEntries;
-            entries.splice(index, 1);
-            await saveData();
-            renderLists();
-            renderCalendar();
-            updateDashboard();
-        }
-
-        function changeLanguage() {
-            const lang = document.getElementById('language-select').value;
-            localStorage.setItem('preferredLanguage', lang);
-
-            document.querySelectorAll('[data-lang]').forEach(el => {
-                const key = el.getAttribute('data-lang');
-                if (translations[lang][key]) el.textContent = translations[lang][key];
-            });
-            document.querySelectorAll('[data-lang-placeholder]').forEach(el => {
-                const key = el.getAttribute('data-lang-placeholder');
-                if (translations[lang][key]) el.placeholder = translations[lang][key];
-            });
-
-            const themeBtn = document.querySelector('.theme-toggle button');
-            themeBtn.textContent = document.body.classList.contains('dark-mode') ? 
-                (lang === 'en' ? 'Light Mode' : lang === 'hi' ? 'लाइट मोड' : 'લાઇટ મોડ') : 
-                translations[lang].dark_mode;
-
-            populateYearMonthSelects();
-            updateDashboard();
-            renderCalendar();
-            renderLists();
-        }
-
-        function updateDynamicTranslations() {
-            const lang = document.getElementById('language-select').value || 'en';
-            document.querySelectorAll('.edit-btn').forEach(btn => {
-                if (!btn.classList.contains('save-btn')) btn.textContent = translations[lang].edit;
-            });
-            document.querySelectorAll('.delete-btn').forEach(btn => btn.textContent = translations[lang].delete);
-            document.querySelectorAll('.save-btn').forEach(btn => btn.textContent = translations[lang].save);
-            document.querySelectorAll('.cancel-btn').forEach(btn => btn.textContent = translations[lang].cancel);
         }
 
         function toggleTheme() {
             document.body.classList.toggle('dark-mode');
-            const lang = document.getElementById('language-select').value || 'en';
-            const themeBtn = document.querySelector('.theme-toggle button');
-            themeBtn.textContent = document.body.classList.contains('dark-mode') ? 
-                (lang === 'en' ? 'Light Mode' : lang === 'hi' ? 'लाइट मोड' : 'લાઇટ મોડ') : 
-                translations[lang].dark_mode;
         }
 
         function openTab(tabName) {
@@ -1206,3 +1184,4 @@
     </script>
 </body>
 </html>
+
