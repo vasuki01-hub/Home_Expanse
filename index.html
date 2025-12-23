@@ -9,6 +9,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
     <style>
         :root {
             --bg: #f4f6f9;
@@ -58,16 +60,56 @@
             box-shadow: 0 0 15px var(--shadow);
         }
         header {
-            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 30px;
+            flex-wrap: wrap;
         }
         h1 { color: var(--heading); margin-bottom: 10px; }
         .header-controls {
             display: flex;
             gap: 10px;
-            justify-content: center;
+            align-items: center;
             flex-wrap: wrap;
         }
+        .profile-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #3498db;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1.2em;
+            background-size: cover;
+            background-position: center;
+        }
+        .profile-dropdown {
+    display: none;
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    width: 320px;
+    background: var(--container-bg);
+    border-left: 1px solid var(--border);
+    box-shadow: -10px 0 30px rgba(0,0,0,0.3);
+    padding: 30px 20px;
+    z-index: 10000;
+    overflow-y: auto;
+    transform: translateX(100%);
+    transition: transform 0.35s ease;
+}
+
+.profile-dropdown.show {
+    display: block;
+    transform: translateX(0);
+}
+
         select, button {
             padding: 6px 10px;
             border-radius: 8px;
@@ -236,7 +278,7 @@
             font-size: 1.3em;
             text-align: left;
         }
-        #login-page {
+        #login-page, #signup-page {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
             background: #dfe3f3;
@@ -245,14 +287,15 @@
             align-items: center;
             z-index: 9999;
         }
-        .login-box {
+        .auth-box {
             background: var(--container-bg);
             padding: 40px;
             border-radius: 30px;
-            width: 350px;
+            width: 400px;
             text-align: center;
             box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
+        .auth-link { margin-top: 20px; color: #3498db; cursor: pointer; }
         #main-app { display: none; }
         .sync-status {
             text-align: center;
@@ -260,17 +303,59 @@
             margin: 10px 0;
             color: #27ae60;
         }
+
+        .sync-status {
+    text-align: center;
+    font-size: 1em;
+    margin: 15px 0;
+    padding: 12px;
+    border-radius: 10px;
+    background: #d4edda;
+    color: #155724;
+    font-weight: 500;
+}
+
+
+
         .logout-btn { background: #e74c3c; }
+        .delete-account-btn { background: #c0392b; margin-top: 15px; }
+        .version-info { font-size: 0.8em; color: #777; margin-top: 20px; }
+        .profile-photo { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; }
+        #edit-profile-modal { display: none; }
+        #edit-profile-modal .modal-content { background: var(--container-bg); padding: 20px; border-radius: 8px; width: 400px; }
     </style>
 </head>
 <body>
 
+    <!-- Signup Page -->
+    <div id="signup-page" style="display:none;">
+        <div class="auth-box">
+            <h2>Create Account</h2>
+            <form id="signup-form">
+                <input type="text" id="signup-firstname" placeholder="First Name" required>
+                <input type="text" id="signup-lastname" placeholder="Last Name" required>
+                <input type="tel" id="signup-contact" placeholder="Contact Number (optional)">
+                <input type="email" id="signup-email" placeholder="Email ID" required>
+                <input type="password" id="signup-password" placeholder="Password" required>
+                <input type="password" id="signup-confirm" placeholder="Confirm Password" required>
+                <button type="submit">Create Account</button>
+            </form>
+            <div class="auth-link" onclick="showLogin()">Already have an account? Login</div>
+            <p id="signup-error" style="color:red; margin-top:15px; display:none;"></p>
+        </div>
+    </div>
+
+    <!-- Login Page -->
     <div id="login-page">
-        <div class="login-box">
+        <div class="auth-box">
             <h2>Home Expanses Login</h2>
-            <input type="password" id="login-password" placeholder="Enter Password">
-            <button id="login-btn">Login</button>
-            <p id="login-error" style="color:red; margin-top:15px; display:none;">Incorrect password!</p>
+            <form id="login-form">
+                <input type="email" id="login-email" placeholder="Email" required>
+                <input type="password" id="login-password" placeholder="Password" required>
+                <button type="submit">Login</button>
+            </form>
+            <div class="auth-link" onclick="showSignup()">Create new account</div>
+            <p id="login-error" style="color:red; margin-top:15px; display:none;"></p>
         </div>
     </div>
 
@@ -284,9 +369,20 @@
                     <option value="gu">ગુજરાતી</option>
                 </select>
                 <button onclick="toggleTheme()">Dark Mode</button>
-                <button id="logout-btn" class="logout-btn" style="display:none;">Logout</button>
+                <div class="profile-icon" id="profile-icon" onclick="toggleProfile()"></div>
             </div>
         </header>
+
+        <div id="profile-dropdown" class="profile-dropdown">
+            <h3>User Profile</h3>
+            <div id="profile-info"></div>
+            <button onclick="openEditProfile()">Edit Profile</button>
+            <button class="delete-account-btn" onclick="deleteAccount()">Delete Account</button>
+            <hr>
+            <button onclick="toggleTheme()">Toggle Dark Mode</button>
+            <button id="logout-btn" class="logout-btn">Logout</button>
+            <div class="version-info">App Version: 0.0.0.1</div>
+        </div>
 
         <div class="sync-status" id="sync-status">Loading data...</div>
 
@@ -295,6 +391,8 @@
             <button class="tab-btn" onclick="openTab('milk')" data-lang="add_milk">Add Milk</button>
             <button class="tab-btn" onclick="openTab('water')" data-lang="add_water">Add Water</button>
             <button class="tab-btn" onclick="openTab('extra')" data-lang="add_extra">Add Extra Expense</button>
+            <button class="tab-btn" onclick="openTab('credit')" data-lang="add_credit">Add Credit Balance</button>
+            <button class="tab-btn" onclick="openTab('papad')" data-lang="add_papad">Add Papad Expense</button>
             <button class="tab-btn" onclick="openTab('calendar')" data-lang="calendar_view">Calendar View</button>
             <button class="tab-btn" onclick="openTab('lists')" data-lang="list_view">List View</button>
         </section>
@@ -310,6 +408,7 @@
                     <button class="pdf-btn" onclick="generateMilkPDF()" data-lang="download_milk_pdf">Milk PDF</button>
                     <button class="pdf-btn" onclick="generateWaterPDF()" data-lang="download_water_pdf">Water PDF</button>
                     <button class="pdf-btn" onclick="generateExtraPDF()" data-lang="download_extra_pdf">Extra PDF</button>
+                    <button class="pdf-btn" onclick="generatePapadPDF()">Papad PDF</button>
                 </div>
             </div>
 
@@ -319,6 +418,8 @@
                 <div class="stat"><h3 data-lang="total_water_btl">Total Water (Btl)</h3><p id="dash-water-btl">0</p></div>
                 <div class="stat"><h3 data-lang="water_expense">Water Expense</h3><p id="dash-water-amt">Rs 0</p></div>
                 <div class="stat"><h3 data-lang="extra_expense">Extra Expenses</h3><p id="dash-extra-amt">Rs 0</p></div>
+                <div class="stat"><h3>Papad Expenses</h3><p id="dash-papad-amt">Rs 0</p></div>
+                <div class="stat"><h3>Total Credits</h3><p id="dash-credit-amt">Rs 0</p></div>
                 <div class="stat"><h3 data-lang="total_expense">Grand Total</h3><p id="dash-total">Rs 0</p></div>
             </div>
 
@@ -366,6 +467,92 @@
             </form>
         </section>
 
+        <!-- Add Credit Balance -->
+        <section id="credit" class="tab-content" style="display:none;">
+            <h2 data-lang="add_credit">Add Credit Balance</h2>
+            <form id="credit-form">
+                <input type="date" id="credit-date" required>
+                <input type="text" id="credit-name" placeholder="Full Name" required>
+                <input type="tel" id="credit-contact" placeholder="Contact Number" required>
+                <select id="credit-category" required>
+                    <option value="" disabled selected>Select Category</option>
+                    <option value="client">Client</option>
+                    <option value="salary">Salary</option>
+                    <option value="business">Business</option>
+                    <option value="others">Others</option>
+                </select>
+                <select id="credit-mode" required>
+                    <option value="" disabled selected>Select Mode</option>
+                    <option value="cash">Cash</option>
+                    <option value="G-Pay">G-Pay</option>
+                    <option value="online">Online</option>
+                    <option value="BT">BT</option>
+                    <option value="other">Other</option>
+                </select>
+                <input type="file" id="credit-photo" accept="image/*">
+                <div id="credit-photo-preview" class="photo-gallery"></div>
+                <input type="text" id="credit-remarks" placeholder="Remarks (optional)">
+                <input type="number" id="credit-amount" placeholder="Amount (₹)" min="0" step="0.01" required>
+                <button type="submit">Submit</button>
+            </form>
+
+            <h2>View Credit Balances</h2>
+            <div class="filter">
+                <label>Month:</label>
+                <select id="credit-month" onchange="renderCreditList()"></select>
+                <label>Year:</label>
+                <select id="credit-year" onchange="renderCreditList()"></select>
+                <label>Category:</label>
+                <select id="credit-filter-category" onchange="renderCreditList()">
+                    <option value="all">All</option>
+                    <option value="client">Client</option>
+                    <option value="salary">Salary</option>
+                    <option value="business">Business</option>
+                    <option value="others">Others</option>
+                </select>
+            </div>
+            <div id="credit-list"></div>
+        </section>
+
+        <!-- Add Papad Expense -->
+        <section id="papad" class="tab-content" style="display:none;">
+            <h2>Add Papad Expense</h2>
+            <form id="papad-form">
+                <input type="date" id="papad-date" required>
+                <select id="papad-category" required>
+                    <option value="" disabled selected>Select Category</option>
+                    <option value="Utensils">Utensils</option>
+                    <option value="Groceries">Groceries</option>
+                    <option value="Event">Event</option>
+                    <option value="Bills">Bills</option>
+                    <option value="Medicine">Medicine</option>
+                    <option value="others">Others</option>
+                </select>
+                <select id="papad-mode" required>
+                    <option value="" disabled selected>Select Mode</option>
+                    <option value="cash">Cash</option>
+                    <option value="G-Pay">G-Pay</option>
+                    <option value="online">Online</option>
+                    <option value="BT">BT</option>
+                    <option value="other">Other</option>
+                </select>
+                <input type="file" id="papad-photo" accept="image/*">
+                <div id="papad-photo-preview" class="photo-gallery"></div>
+                <input type="text" id="papad-remarks" placeholder="Remarks (optional)">
+                <input type="number" id="papad-amount" placeholder="Amount (₹)" min="0" step="0.01" required>
+                <button type="submit">Submit</button>
+            </form>
+
+            <h2>View Papad Expenses</h2>
+            <div class="filter">
+                <label>Month:</label>
+                <select id="papad-month" onchange="renderPapadList()"></select>
+                <label>Year:</label>
+                <select id="papad-year" onchange="renderPapadList()"></select>
+            </div>
+            <div id="papad-list"></div>
+        </section>
+
         <!-- Calendar View -->
         <section id="calendar" class="tab-content" style="display:none;">
             <div class="filter">
@@ -390,6 +577,10 @@
             <h2 data-lang="extra_entries">Extra Expenses</h2>
             <div id="extra-total" class="month-total" style="display:none;"></div>
             <div id="extra-list"></div>
+            <h2>Credit Balances</h2><div id="credit-total" class="month-total" style="display:none;"></div>
+            <div id="credit-list-short"></div>
+            <h2>Papad Expenses</h2><div id="papad-total" class="month-total" style="display:none;"></div>
+            <div id="papad-list-short"></div>
             <div id="list-grand-total" class="grand-total" style="display:none;"></div>
         </section>
     </div>
@@ -398,6 +589,21 @@
         <span class="close-modal">&times;</span>
         <div class="modal-content">
             <img id="modal-photo" style="max-width:90%; max-height:80vh;" src="" alt="Photo">
+        </div>
+    </div>
+
+    <div id="edit-profile-modal" class="modal" onclick="closeEditProfile()">
+        <div class="modal-content" onclick="event.stopPropagation();">
+            <h2>Edit Profile</h2>
+            <form id="edit-profile-form">
+                <input type="text" id="edit-firstname" placeholder="First Name" required>
+                <input type="text" id="edit-lastname" placeholder="Last Name" required>
+                <input type="tel" id="edit-contact" placeholder="Contact Number">
+                <input type="file" id="edit-photo" accept="image/*">
+                <img id="edit-photo-preview" class="photo-preview" style="display:none;">
+                <button type="submit">Save</button>
+                <button type="button" onclick="closeEditProfile()">Cancel</button>
+            </form>
         </div>
     </div>
 
@@ -413,11 +619,15 @@
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        const DATA_DOC = "shared_expenses/data";
-        const APP_PASSWORD = "HE";
+        const auth = firebase.auth();
+        const storage = firebase.storage();
+        const USERS_COLLECTION = "users";
 
-        let milkEntries = [], waterEntries = [], extraEntries = [], monthlyChart = null;
+        let milkEntries = [], waterEntries = [], extraEntries = [], creditEntries = [], papadEntries = [];
+        let currentUser = null;
+        let monthlyChart = null;
         const MILK_PRICE = 60, WATER_PRICE = 15;
+        const ADMIN_EMAIL = "homexpanse09@gmail.com";
 
         const translations = {
             en: {
@@ -425,6 +635,8 @@
                 add_milk: "Add Milk",
                 add_water: "Add Water",
                 add_extra: "Add Extra Expense",
+                add_credit: "Add Credit Balance",
+                add_papad: "Add Papad Expense",
                 calendar_view: "Calendar View",
                 list_view: "List View",
                 filter_month: "Month:",
@@ -452,6 +664,8 @@
                 add_milk: "दूध जोड़ें",
                 add_water: "पानी जोड़ें",
                 add_extra: "अतिरिक्त खर्च जोड़ें",
+                add_credit: "क्रेडिट बैलेंस जोड़ें",
+                add_papad: "पापड़ खर्च जोड़ें",
                 calendar_view: "कैलेंडर दृश्य",
                 list_view: "सूची दृश्य",
                 filter_month: "माह:",
@@ -476,6 +690,8 @@
                 add_milk: "દૂધ ઉમેરો",
                 add_water: "પાણી ઉમેરો",
                 add_extra: "અતિરિક્ત ખર્ચ ઉમેરો",
+                add_credit: "ક્રેડિટ બેલેન્સ ઉમેરો",
+                add_papad: "પાપડ ખર્ચ ઉમેરો",
                 calendar_view: "કૅલેન્ડર દૃશ્ય",
                 list_view: "યાદી દૃશ્ય",
                 filter_month: "મહિનો:",
@@ -499,71 +715,242 @@
 
         let currentLang = 'en';
 
-        async function loadData() {
-            try {
-                const doc = await db.doc(DATA_DOC).get();
-                if (doc.exists) {
-                    const data = doc.data();
-                    milkEntries = data.milkEntries || [];
-                    waterEntries = data.waterEntries || [];
-                    extraEntries = data.extraEntries || [];
-                }
-                document.getElementById('sync-status').textContent = "Data synced!";
-                document.getElementById('sync-status').style.color = "#27ae60";
-            } catch (err) {
-                document.getElementById('sync-status').textContent = "Offline – changes will sync later";
-                document.getElementById('sync-status').style.color = "#e67e22";
-            }
-            initApp();
+        function showSignup() {
+            document.getElementById('login-page').style.display = 'none';
+            document.getElementById('signup-page').style.display = 'flex';
         }
+
+        function showLogin() {
+            document.getElementById('signup-page').style.display = 'none';
+            document.getElementById('login-page').style.display = 'flex';
+        }
+
+        document.getElementById('signup-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const email = document.getElementById('signup-email').value.trim();
+            const password = document.getElementById('signup-password').value;
+            const confirm = document.getElementById('signup-confirm').value;
+            if (password !== confirm) {
+                document.getElementById('signup-error').textContent = "Passwords do not match";
+                document.getElementById('signup-error').style.display = 'block';
+                return;
+            }
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const uid = userCredential.user.uid;
+                await db.collection(USERS_COLLECTION).doc(uid).set({
+                    firstName: document.getElementById('signup-firstname').value.trim(),
+                    lastName: document.getElementById('signup-lastname').value.trim(),
+                    contact: document.getElementById('signup-contact').value.trim(),
+                    email: email,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                alert("Account created successfully!");
+                showLogin();
+            } catch (err) {
+                document.getElementById('signup-error').textContent = err.message;
+                document.getElementById('signup-error').style.display = 'block';
+            }
+        });
+
+        document.getElementById('login-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+            } catch (err) {
+                document.getElementById('login-error').textContent = "Invalid email or password";
+                document.getElementById('login-error').style.display = 'block';
+            }
+        });
+
+        auth.onAuthStateChanged(async user => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('login-page').style.display = 'none';
+                document.getElementById('signup-page').style.display = 'none';
+                document.getElementById('main-app').style.display = 'block';
+                await loadUserProfile();
+                await loadData();
+            } else {
+                currentUser = null;
+                document.getElementById('main-app').style.display = 'none';
+                document.getElementById('login-page').style.display = 'flex';
+            }
+        });
+
+        async function loadUserProfile() {
+            const doc = await db.collection(USERS_COLLECTION).doc(currentUser.uid).get();
+            if (doc.exists) {
+                const data = doc.data();
+                const profileIcon = document.getElementById('profile-icon');
+                if (data.profilePhoto) {
+                    profileIcon.style.backgroundImage = `url(${data.profilePhoto})`;
+                    profileIcon.textContent = '';
+                } else {
+                    profileIcon.style.backgroundImage = '';
+                    profileIcon.textContent = (data.firstName.charAt(0) + data.lastName.charAt(0)).toUpperCase();
+                }
+                let photoHtml = '';
+                if (data.profilePhoto) {
+                    photoHtml = `<img src="${data.profilePhoto}" class="profile-photo" alt="Profile Photo">`;
+                }
+                document.getElementById('profile-info').innerHTML = `
+                    ${photoHtml}
+                    <p><strong>Name:</strong> ${data.firstName} ${data.lastName}</p>
+                    <p><strong>Email:</strong> ${data.email}</p>
+                    <p><strong>Contact:</strong> ${data.contact || '-'}</p>
+                    <p><strong>User ID:</strong> ${currentUser.uid}</p>
+                `;
+            }
+        }
+
+        function toggleProfile() {
+            const dropdown = document.getElementById('profile-dropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('profile-dropdown');
+    const icon = document.getElementById('profile-icon');
+    if (dropdown.classList.contains('show') && !dropdown.contains(e.target) && !icon.contains(e.target)) {
+        dropdown.classList.remove('show');
+    }
+});
+
+
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('profile-dropdown');
+            const icon = document.getElementById('profile-icon');
+if (data.profilePhoto) {
+    icon.style.backgroundImage = `url(${data.profilePhoto})`;
+    icon.textContent = '';
+} else {
+    icon.style.backgroundImage = '';
+    const initials = (data.firstName?.[0] || '') + (data.lastName?.[0] || '');
+    icon.textContent = initials.toUpperCase() || 'U';
+}
+        });
+
+        function openEditProfile() {
+            const modal = document.getElementById('edit-profile-modal');
+            modal.style.display = 'flex';
+            db.collection(USERS_COLLECTION).doc(currentUser.uid).get().then(snap => {
+                const data = snap.data();
+                document.getElementById('edit-firstname').value = data.firstName;
+                document.getElementById('edit-lastname').value = data.lastName;
+                document.getElementById('edit-contact').value = data.contact || '';
+                if (data.profilePhoto) {
+                    document.getElementById('edit-photo-preview').src = data.profilePhoto;
+                    document.getElementById('edit-photo-preview').style.display = 'block';
+                } else {
+                    document.getElementById('edit-photo-preview').style.display = 'none';
+                }
+            });
+
+            document.getElementById('edit-photo').addEventListener('change', e => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = ev => {
+                        document.getElementById('edit-photo-preview').src = ev.target.result;
+                        document.getElementById('edit-photo-preview').style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        function closeEditProfile() {
+            document.getElementById('edit-profile-modal').style.display = 'none';
+        }
+
+        document.getElementById('edit-profile-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const updates = {
+                firstName: document.getElementById('edit-firstname').value.trim(),
+                lastName: document.getElementById('edit-lastname').value.trim(),
+                contact: document.getElementById('edit-contact').value.trim()
+            };
+            const file = document.getElementById('edit-photo').files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = async ev => {
+                    updates.profilePhoto = ev.target.result;
+                    await db.collection(USERS_COLLECTION).doc(currentUser.uid).update(updates);
+                    loadUserProfile();
+                    closeEditProfile();
+                };
+                reader.readAsDataURL(file);
+            } else {
+                await db.collection(USERS_COLLECTION).doc(currentUser.uid).update(updates);
+                loadUserProfile();
+                closeEditProfile();
+            }
+        });
+
+        function deleteAccount() {
+            if (confirm("Are you sure you want to delete your account? This cannot be undone.")) {
+                db.collection(USERS_COLLECTION).doc(currentUser.uid).delete().then(() => {
+                    currentUser.delete().then(() => {
+                        alert("Account deleted");
+                    });
+                });
+            }
+        }
+
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            auth.signOut();
+        });
+
+        async function loadData() {
+    if (!currentUser) return;
+    try {
+        const docRef = db.collection(`users/${currentUser.uid}/expenses`).doc('data');
+        const doc = await docRef.get();
+        if (doc.exists) {
+             data = doc.data();
+            milkEntries = data.milkEntries || [];
+            waterEntries = data.waterEntries || [];
+            extraEntries = data.extraEntries || [];
+            creditEntries = data.creditEntries || [];
+            papadEntries = data.papadEntries || [];
+        } else {
+            milkEntries = [];
+            waterEntries = [];
+            extraEntries = [];
+            creditEntries = [];
+            papadEntries = [];
+        }
+        document.getElementById('sync-status').textContent = "Data loaded successfully!";
+        document.getElementById('sync-status').style.color = "#27ae60";
+    } catch (err) {
+        console.error("Load error:", err);
+        document.getElementById('sync-status').textContent = "Offline – changes will sync later";
+        document.getElementById('sync-status').style.color = "#e67e22";
+    }
+    initApp();
+}
 
         async function saveData() {
-            try {
-                await db.doc(DATA_DOC).set({
-                    milkEntries,
-                    waterEntries,
-                    extraEntries
-                });
-            } catch (err) { console.error("Save error:", err); }
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-            const loginPage = document.getElementById('login-page');
-            const mainApp = document.getElementById('main-app');
-            const logoutBtn = document.getElementById('logout-btn');
-
-            if (isLoggedIn) {
-                loginPage.style.display = 'none';
-                mainApp.style.display = 'block';
-                logoutBtn.style.display = 'block';
-                loadData();
-            } else {
-                loginPage.style.display = 'flex';
-                mainApp.style.display = 'none';
-            }
-
-            document.getElementById('login-btn').addEventListener('click', () => {
-                if (document.getElementById('login-password').value === APP_PASSWORD) {
-                    localStorage.setItem('isLoggedIn', 'true');
-                    loginPage.style.display = 'none';
-                    mainApp.style.display = 'block';
-                    logoutBtn.style.display = 'block';
-                    loadData();
-                } else {
-                    document.getElementById('login-error').style.display = 'block';
-                }
-            });
-
-            logoutBtn.addEventListener('click', () => {
-                localStorage.removeItem('isLoggedIn');
-                location.reload();
-            });
+    if (!currentUser) return;
+    try {
+        await db.collection(`users/${currentUser.uid}/expenses`).doc('data').set({
+            milkEntries,
+            waterEntries,
+            extraEntries,
+            creditEntries,
+            papadEntries
         });
+    } catch (err) {
+        console.error("Save error:", err);
+    }
+}
 
         function initApp() {
             const today = new Date().toISOString().split('T')[0];
-            ['milk', 'water', 'extra'].forEach(id => {
+            ['milk', 'water', 'extra', 'credit', 'papad'].forEach(id => {
                 const el = document.getElementById(id + '-date');
                 if (el) el.value = today;
             });
@@ -573,6 +960,7 @@
             translatePage();
 
             populateYearMonthSelects();
+            populateCreditPapadSelects();
             openTab('dashboard');
         }
 
@@ -584,6 +972,7 @@
                 }
             });
             populateYearMonthSelects();
+            populateCreditPapadSelects();
             if (document.getElementById('calendar').style.display === 'block') renderCalendar();
             if (document.getElementById('lists').style.display === 'block') renderLists();
         }
@@ -597,7 +986,7 @@
 
         function populateYearMonthSelects() {
             const years = new Set([new Date().getFullYear()]);
-            [...milkEntries, ...waterEntries, ...extraEntries].forEach(e => {
+            [...milkEntries, ...waterEntries, ...extraEntries, ...creditEntries, ...papadEntries].forEach(e => {
                 const d = new Date(e.date);
                 years.add(d.getFullYear());
             });
@@ -624,7 +1013,35 @@
             });
         }
 
-        // Preview multiple photos
+        function populateCreditPapadSelects() {
+            const years = new Set([new Date().getFullYear()]);
+            [...creditEntries, ...papadEntries].forEach(e => {
+                const d = new Date(e.date);
+                years.add(d.getFullYear());
+            });
+
+            ['credit', 'papad'].forEach(prefix => {
+                const yearSel = document.getElementById(prefix + '-year');
+                const monthSel = document.getElementById(prefix + '-month');
+                if (!yearSel || !monthSel) return;
+                yearSel.innerHTML = `<option value="all">All Years</option>`;
+                monthSel.innerHTML = `<option value="all">All Months</option>`;
+                Array.from(years).sort((a,b)=>b-a).forEach(y => {
+                    const opt = document.createElement('option');
+                    opt.value = y; opt.textContent = y;
+                    if (y === new Date().getFullYear()) opt.selected = true;
+                    yearSel.appendChild(opt);
+                });
+                for (let i = 0; i < 12; i++) {
+                    const opt = document.createElement('option');
+                    opt.value = i;
+                    opt.textContent = new Date(2020, i).toLocaleString(currentLang === 'en' ? 'default' : currentLang, { month: 'long' });
+                    if (i === new Date().getMonth()) opt.selected = true;
+                    monthSel.appendChild(opt);
+                };
+            });
+        }
+
         const extraPhotosInput = document.getElementById('extra-photos');
         if (extraPhotosInput) {
             extraPhotosInput.addEventListener('change', e => {
@@ -645,7 +1062,6 @@
             });
         }
 
-        // Add Extra Expense
         const extraForm = document.getElementById('extra-form');
         if (extraForm) {
             extraForm.addEventListener('submit', async e => {
@@ -677,7 +1093,6 @@
             });
         }
 
-        // Milk & Water forms
         ['milk', 'water'].forEach(type => {
             const qtyInput = document.getElementById(type + '-qty');
             if (qtyInput) {
@@ -712,56 +1127,121 @@
             }
         });
 
-        function getFilteredEntries(month, year) {
+        const creditForm = document.getElementById('credit-form');
+        if (creditForm) {
+            creditForm.addEventListener('submit', async e => {
+                e.preventDefault();
+                const file = document.getElementById('credit-photo').files[0];
+                let photo = null;
+                if (file) {
+                    photo = await new Promise(resolve => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.readAsDataURL(file);
+                    });
+                }
+                creditEntries.push({
+                    date: document.getElementById('credit-date').value,
+                    name: document.getElementById('credit-name').value.trim(),
+                    contact: document.getElementById('credit-contact').value.trim(),
+                    category: document.getElementById('credit-category').value,
+                    mode: document.getElementById('credit-mode').value,
+                    photo: photo,
+                    remarks: document.getElementById('credit-remarks').value.trim(),
+                    amount: parseFloat(document.getElementById('credit-amount').value)
+                });
+                await saveData();
+                e.target.reset();
+                document.getElementById('credit-photo-preview').innerHTML = '';
+                renderCreditList();
+                updateDashboard();
+            });
+        }
+
+        const papadForm = document.getElementById('papad-form');
+        if (papadForm) {
+            papadForm.addEventListener('submit', async e => {
+                e.preventDefault();
+                const file = document.getElementById('papad-photo').files[0];
+                let photo = null;
+                if (file) {
+                    photo = await new Promise(resolve => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.readAsDataURL(file);
+                    });
+                }
+                papadEntries.push({
+                    date: document.getElementById('papad-date').value,
+                    category: document.getElementById('papad-category').value,
+                    mode: document.getElementById('papad-mode').value,
+                    photo: photo,
+                    remarks: document.getElementById('papad-remarks').value.trim(),
+                    amount: parseFloat(document.getElementById('papad-amount').value)
+                });
+                await saveData();
+                e.target.reset();
+                document.getElementById('papad-photo-preview').innerHTML = '';
+                renderPapadList();
+                updateDashboard();
+            });
+        }
+
+        function getFilteredEntries(month, year, entries) {
             const isAllMonth = month === 'all';
             const isAllYear = year === 'all';
             const filter = e => {
                 const d = new Date(e.date);
                 return (isAllMonth || d.getMonth() === parseInt(month)) && (isAllYear || d.getFullYear() === parseInt(year));
             };
-            return {
-                milk: milkEntries.filter(filter),
-                water: waterEntries.filter(filter),
-                extra: extraEntries.filter(filter)
-            };
+            return entries.filter(filter);
         }
 
         function updateDashboard() {
             const month = document.getElementById('dashboard-month').value;
             const year = document.getElementById('dashboard-year').value;
-            const { milk, water, extra } = getFilteredEntries(month, year);
+            const milk = getFilteredEntries(month, year, milkEntries);
+            const water = getFilteredEntries(month, year, waterEntries);
+            const extra = getFilteredEntries(month, year, extraEntries);
+            const papad = getFilteredEntries(month, year, papadEntries);
+            const credit = getFilteredEntries(month, year, creditEntries);
 
             const milkLtr = milk.reduce((s, e) => s + e.qty, 0);
             const milkAmt = milk.reduce((s, e) => s + e.amount, 0);
             const waterBtl = water.reduce((s, e) => s + e.qty, 0);
             const waterAmt = water.reduce((s, e) => s + e.amount, 0);
             const extraAmt = extra.reduce((s, e) => s + e.amount, 0);
+            const papadAmt = papad.reduce((s, e) => s + e.amount, 0);
+            const creditAmt = credit.reduce((s, e) => s + e.amount, 0);
 
             document.getElementById('dash-milk-ltr').textContent = milkLtr.toFixed(1);
             document.getElementById('dash-milk-amt').textContent = `Rs ${milkAmt.toFixed(2)}`;
             document.getElementById('dash-water-btl').textContent = waterBtl;
             document.getElementById('dash-water-amt').textContent = `Rs ${waterAmt.toFixed(2)}`;
             document.getElementById('dash-extra-amt').textContent = `Rs ${extraAmt.toFixed(2)}`;
-            document.getElementById('dash-total').textContent = `Rs ${(milkAmt + waterAmt + extraAmt).toFixed(2)}`;
+            document.getElementById('dash-papad-amt').textContent = `Rs ${papadAmt.toFixed(2)}`;
+            document.getElementById('dash-credit-amt').textContent = `Rs ${creditAmt.toFixed(2)}`;
+            document.getElementById('dash-total').textContent = `Rs ${(milkAmt + waterAmt + extraAmt + papadAmt - creditAmt).toFixed(2)}`;
 
             if (monthlyChart) monthlyChart.destroy();
             monthlyChart = new Chart(document.getElementById('monthlyChart'), {
                 type: 'bar',
                 data: {
-                    labels: ['Milk', 'Water', 'Extra'],
+                    labels: ['Milk', 'Water', 'Extra', 'Papad', 'Credit'],
                     datasets: [{
-                        label: 'Expense (Rs)',
-                        data: [milkAmt, waterAmt, extraAmt],
-                        backgroundColor: ['#3498db', '#e74c3c', '#9b59b6']
+                        label: 'Amount (Rs)',
+                        data: [milkAmt, waterAmt, extraAmt, papadAmt, creditAmt],
+                        backgroundColor: ['#3498db', '#e74c3c', '#9b59b6', '#f39c12', '#27ae60']
                     }]
                 },
                 options: { responsive: true, scales: { y: { beginAtZero: true } } }
             });
         }
 
-        // All PDFs in table format with "Rs "
         function generateMilkPDF() {
-            const { milk } = getFilteredEntries(document.getElementById('dashboard-month').value, document.getElementById('dashboard-year').value);
+            const month = document.getElementById('dashboard-month').value;
+            const year = document.getElementById('dashboard-year').value;
+            const milk = getFilteredEntries(month, year, milkEntries);
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             doc.text('Milk Report', 105, 20, { align: 'center' });
@@ -772,7 +1252,9 @@
         }
 
         function generateWaterPDF() {
-            const { water } = getFilteredEntries(document.getElementById('dashboard-month').value, document.getElementById('dashboard-year').value);
+            const month = document.getElementById('dashboard-month').value;
+            const year = document.getElementById('dashboard-year').value;
+            const water = getFilteredEntries(month, year, waterEntries);
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             doc.text('Water Report', 105, 20, { align: 'center' });
@@ -783,7 +1265,9 @@
         }
 
         function generateExtraPDF() {
-            const { extra } = getFilteredEntries(document.getElementById('dashboard-month').value, document.getElementById('dashboard-year').value);
+            const month = document.getElementById('dashboard-month').value;
+            const year = document.getElementById('dashboard-year').value;
+            const extra = getFilteredEntries(month, year, extraEntries);
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('l', 'mm', 'a4');
 
@@ -810,6 +1294,26 @@
             doc.save('Extra_Report.pdf');
         }
 
+        function generatePapadPDF() {
+            const month = document.getElementById('dashboard-month').value;
+            const year = document.getElementById('dashboard-year').value;
+            const papad = getFilteredEntries(month, year, papadEntries);
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l', 'mm', 'a4');
+            doc.text('Papad Expenses Report', 148, 20, { align: 'center' });
+            const body = papad.map(e => [
+                e.date, e.category, e.mode, 'Rs ' + e.amount.toFixed(2),
+                e.photo ? 'Photo attached' : 'No photo', e.remarks || '-'
+            ]);
+            doc.autoTable({
+                head: [['Date', 'Category', 'Mode', 'Amount', 'Photo', 'Remarks']],
+                body, startY: 30, theme: 'grid'
+            });
+            const total = papad.reduce((s,e)=>s+e.amount,0);
+            doc.text(`Total: Rs ${total.toFixed(2)}`, 14, doc.lastAutoTable.finalY + 10);
+            doc.save('Papad_Report.pdf');
+        }
+
         function renderCalendar() {
             const monthVal = document.getElementById('cal-month').value;
             const yearVal = document.getElementById('cal-year').value;
@@ -824,7 +1328,7 @@
 
             const filtered = allEntries.filter(e => {
                 const d = new Date(e.date);
-                return (!month || d.getMonth() === month) && (!year || d.getFullYear() === year);
+                return (month === null || d.getMonth() === month) && (year === null || d.getFullYear() === year);
             });
 
             if (filtered.length === 0) {
@@ -901,17 +1405,17 @@
             });
         }
 
-        function renderGroupedList(containerId, data, type) {
+        function renderGroupedList(containerId, entries, type) {
             const cont = document.getElementById(containerId);
             if (!cont) return;
-            cont.innerHTML = data.length === 0 ? '<div class="no-data">No entries</div>' : '';
+            cont.innerHTML = entries.length === 0 ? '<div class="no-data">No entries</div>' : '';
 
-            if (data.length === 0) return;
+            if (entries.length === 0) return;
 
             let currentMonth = '';
             let currentTable = null;
 
-            data.sort((a, b) => a.date.localeCompare(b.date)).forEach(e => {
+            entries.sort((a, b) => a.date.localeCompare(b.date)).forEach(e => {
                 const entryMonth = new Date(e.date).toLocaleString(currentLang === 'en' ? 'default' : currentLang, { month: 'long', year: 'numeric' });
                 if (entryMonth !== currentMonth) {
                     currentMonth = entryMonth;
@@ -927,7 +1431,7 @@
                 }
 
                 const tbody = currentTable.querySelector('tbody');
-                const idx = (type === 'milk' ? milkEntries : waterEntries).indexOf(e);
+                const idx = entries.indexOf(e);
                 const row = document.createElement('tr');
                 row.innerHTML = `<td>${e.date}</td><td>${type === 'milk' ? e.qty.toFixed(1) : e.qty} ${type === 'milk' ? 'Ltr' : 'Btl'}</td><td class="amount">Rs ${e.amount.toFixed(2)}</td><td class="actions"></td>`;
                 const actions = row.querySelector('.actions');
@@ -962,7 +1466,6 @@
                         const newDate = dateInput.value;
                         const newQty = parseFloat(qtyInput.value);
                         if (newDate && !isNaN(newQty) && newQty >= 0) {
-                            const entries = type === 'milk' ? milkEntries : waterEntries;
                             entries[idx].date = newDate;
                             entries[idx].qty = newQty;
                             entries[idx].amount = newQty * (type === 'milk' ? MILK_PRICE : WATER_PRICE);
@@ -983,7 +1486,7 @@
 
                 delBtn.onclick = async () => {
                     if (confirm('Delete this entry?')) {
-                        (type === 'milk' ? milkEntries : waterEntries).splice(idx, 1);
+                        entries.splice(idx, 1);
                         await saveData();
                         renderLists();
                         updateDashboard();
@@ -995,18 +1498,14 @@
             });
         }
 
-        function renderExtraList() {
-            const month = document.getElementById('list-month').value;
-            const year = document.getElementById('list-year').value;
-            let filtered = getFilteredEntries(month, year).extra;
-            filtered = filtered.sort((a, b) => a.date.localeCompare(b.date));
-
-            const cont = document.getElementById('extra-list');
+        function renderExtraList(containerId = 'extra-list', entries = extraEntries, month = 'all', year = 'all') {
+            const filtered = getFilteredEntries(month, year, entries).sort((a, b) => a.date.localeCompare(b.date));
+            const cont = document.getElementById(containerId);
             if (!cont) return;
             cont.innerHTML = filtered.length === 0 ? '<div class="no-data">No extra expenses</div>' : '';
 
             if (filtered.length === 0) {
-                document.getElementById('extra-total').style.display = 'none';
+                document.getElementById(containerId === 'extra-list' ? 'extra-total' : '').style.display = 'none';
                 return;
             }
 
@@ -1032,7 +1531,7 @@
                 total += e.amount;
 
                 const tbody = currentTable.querySelector('tbody');
-                const idx = extraEntries.indexOf(e);
+                const idx = entries.indexOf(e);
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${e.date}</td>
@@ -1131,14 +1630,20 @@
                             document.getElementById('modal-photo').src = photo;
                             document.getElementById('photo-modal').style.display = 'flex';
                         };
-                        const removeBtn = document.createElement('button');
-                        removeBtn.className = 'remove-photo-btn';
-                        removeBtn.textContent = 'Remove';
-                        removeBtn.onclick = (ev) => {
+                        const downloadBtn = document.createElement('button');
+                        downloadBtn.className = 'download-photo-btn';
+                        downloadBtn.textContent = 'Download';
+                        downloadBtn.onclick = (ev) => {
                             ev.stopPropagation();
-                            wrapper.remove();
+                            const a = document.createElement('a');
+                            a.href = photo;
+                            a.download = `extra_photo_${e.date}_${i + 1}.jpg`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
                         };
-                        wrapper.append(img, removeBtn);
+                        wrapper.appendChild(img);
+                        wrapper.appendChild(downloadBtn);
                         gallery.appendChild(wrapper);
                     });
 
@@ -1151,7 +1656,24 @@
                                 const img = document.createElement('img');
                                 img.src = ev.target.result;
                                 img.className = 'photo-preview';
+                                img.onclick = () => {
+                                    document.getElementById('modal-photo').src = ev.target.result;
+                                    document.getElementById('photo-modal').style.display = 'flex';
+                                };
+                                const downloadBtn = document.createElement('button');
+                                downloadBtn.className = 'download-photo-btn';
+                                downloadBtn.textContent = 'Download';
+                                downloadBtn.onclick = (ev) => {
+                                    ev.stopPropagation();
+                                    const a = document.createElement('a');
+                                    a.href = ev.target.result;
+                                    a.download = `extra_photo_${e.date}_${i + 1}.jpg`;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                };
                                 wrapper.appendChild(img);
+                                wrapper.appendChild(downloadBtn);
                                 gallery.appendChild(wrapper);
                             };
                             reader.readAsDataURL(file);
@@ -1162,23 +1684,9 @@
                     editBtn.className = 'save-btn';
                     editBtn.onclick = async () => {
                         const finalPhotos = [];
-                        gallery.querySelectorAll('.photo-wrapper').forEach(wrapper => {
-                            const img = wrapper.querySelector('img');
-                            if (img) finalPhotos.push(img.src);
-                        });
+                        gallery.querySelectorAll('.photo-preview').forEach(img => finalPhotos.push(img.src));
 
-                        if (newFileInput.files.length > 0) {
-                            for (let file of newFileInput.files) {
-                                const dataUrl = await new Promise(r => {
-                                    const reader = new FileReader();
-                                    reader.onload = () => r(reader.result);
-                                    reader.readAsDataURL(file);
-                                });
-                                finalPhotos.push(dataUrl);
-                            }
-                        }
-
-                        extraEntries[idx] = {
+                        entries[idx] = {
                             date: dateInput.value,
                             category: catSelect.value,
                             description: descInput.value.trim(),
@@ -1187,23 +1695,23 @@
                         };
 
                         await saveData();
-                        renderLists();
+                        renderExtraList(containerId, entries, month, year);
                         updateDashboard();
                     };
 
                     const cancelBtn = document.createElement('button');
                     cancelBtn.className = 'cancel-btn';
                     cancelBtn.textContent = 'Cancel';
-                    cancelBtn.onclick = () => renderLists();
+                    cancelBtn.onclick = () => renderExtraList(containerId, entries, month, year);
                     actions.insertBefore(cancelBtn, delBtn);
                     delBtn.style.display = 'none';
                 };
 
                 delBtn.onclick = async () => {
                     if (confirm('Delete this extra expense?')) {
-                        extraEntries.splice(idx, 1);
+                        entries.splice(idx, 1);
                         await saveData();
-                        renderLists();
+                        renderExtraList(containerId, entries, month, year);
                         updateDashboard();
                     }
                 };
@@ -1211,28 +1719,500 @@
                 tbody.appendChild(row);
             });
 
-            document.getElementById('extra-total').textContent = `Total Extra: Rs ${total.toFixed(2)}`;
-            document.getElementById('extra-total').style.display = 'block';
+            if (containerId === 'extra-list') {
+                document.getElementById('extra-total').textContent = `Total Extra: Rs ${total.toFixed(2)}`;
+                document.getElementById('extra-total').style.display = 'block';
+            }
+        }
+
+        function renderCreditList(containerId = 'credit-list', entries = creditEntries) {
+            const month = document.getElementById('credit-month') ? document.getElementById('credit-month').value : 'all';
+            const year = document.getElementById('credit-year') ? document.getElementById('credit-year').value : 'all';
+            const category = document.getElementById('credit-filter-category') ? document.getElementById('credit-filter-category').value : 'all';
+            let filtered = getFilteredEntries(month, year, entries);
+            if (category !== 'all') filtered = filtered.filter(e => e.category === category);
+            filtered = filtered.sort((a, b) => a.date.localeCompare(b.date));
+
+            const cont = document.getElementById(containerId);
+            if (!cont) return;
+            cont.innerHTML = filtered.length === 0 ? '<div class="no-data">No credit entries</div>' : '';
+
+            if (filtered.length === 0) {
+                document.getElementById(containerId === 'credit-list' ? 'credit-total' : '').style.display = 'none';
+                return;
+            }
+
+            let currentMonth = '';
+            let currentTable = null;
+            let total = 0;
+
+            filtered.forEach(e => {
+                const entryMonth = new Date(e.date).toLocaleString(currentLang === 'en' ? 'default' : currentLang, { month: 'long', year: 'numeric' });
+                if (entryMonth !== currentMonth) {
+                    currentMonth = entryMonth;
+
+                    const separator = document.createElement('div');
+                    separator.className = 'month-separator';
+                    separator.textContent = currentMonth;
+                    cont.appendChild(separator);
+
+                    currentTable = document.createElement('table');
+                    currentTable.innerHTML = `<thead><tr><th>Date</th><th>Name</th><th>Contact</th><th>Category</th><th>Mode</th><th>Amount</th><th>Photo</th><th>Remarks</th><th>Actions</th></tr></thead><tbody></tbody>`;
+                    cont.appendChild(currentTable);
+                }
+
+                total += e.amount;
+
+                const tbody = currentTable.querySelector('tbody');
+                const idx = entries.indexOf(e);
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${e.date}</td>
+                    <td>${e.name}</td>
+                    <td>${e.contact}</td>
+                    <td>${e.category}</td>
+                    <td>${e.mode}</td>
+                    <td class="amount">Rs ${e.amount.toFixed(2)}</td>
+                    <td class="photo-gallery"></td>
+                    <td>${e.remarks || '-'}</td>
+                    <td class="actions"></td>
+                `;
+
+                const photoCell = row.cells[6];
+                if (e.photo) {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'photo-wrapper';
+                    const img = document.createElement('img');
+                    img.src = e.photo;
+                    img.className = 'photo-preview';
+                    img.onclick = () => {
+                        document.getElementById('modal-photo').src = e.photo;
+                        document.getElementById('photo-modal').style.display = 'flex';
+                    };
+                    const downloadBtn = document.createElement('button');
+                    downloadBtn.className = 'download-photo-btn';
+                    downloadBtn.textContent = 'Download';
+                    downloadBtn.onclick = (ev) => {
+                        ev.stopPropagation();
+                        const a = document.createElement('a');
+                        a.href = e.photo;
+                        a.download = `credit_photo_${e.date}.jpg`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    };
+                    wrapper.appendChild(img);
+                    wrapper.appendChild(downloadBtn);
+                    photoCell.appendChild(wrapper);
+                } else {
+                    photoCell.textContent = '-';
+                }
+
+                const actions = row.cells[8];
+                const editBtn = document.createElement('button');
+                editBtn.className = 'edit-btn';
+                editBtn.textContent = 'Edit';
+                const delBtn = document.createElement('button');
+                delBtn.className = 'delete-btn';
+                delBtn.textContent = 'Delete';
+                actions.append(editBtn, delBtn);
+
+                editBtn.onclick = () => {
+                    const cells = row.cells;
+
+                    const dateInput = document.createElement('input');
+                    dateInput.type = 'date';
+                    dateInput.value = e.date;
+                    cells[0].innerHTML = '';
+                    cells[0].appendChild(dateInput);
+
+                    const nameInput = document.createElement('input');
+                    nameInput.type = 'text';
+                    nameInput.value = e.name;
+                    cells[1].innerHTML = '';
+                    cells[1].appendChild(nameInput);
+
+                    const contactInput = document.createElement('input');
+                    contactInput.type = 'tel';
+                    contactInput.value = e.contact;
+                    cells[2].innerHTML = '';
+                    cells[2].appendChild(contactInput);
+
+                    const catSelect = document.createElement('select');
+                    ['client','salary','business','others'].forEach(c => {
+                        const o = document.createElement('option');
+                        o.value = c;
+                        o.textContent = c.charAt(0).toUpperCase() + c.slice(1);
+                        if (c === e.category) o.selected = true;
+                        catSelect.appendChild(o);
+                    });
+                    cells[3].innerHTML = '';
+                    cells[3].appendChild(catSelect);
+
+                    const modeSelect = document.createElement('select');
+                    ['cash','G-Pay','online','BT','other'].forEach(m => {
+                        const o = document.createElement('option');
+                        o.value = m;
+                        o.textContent = m;
+                        if (m === e.mode) o.selected = true;
+                        modeSelect.appendChild(o);
+                    });
+                    cells[4].innerHTML = '';
+                    cells[4].appendChild(modeSelect);
+
+                    const amtInput = document.createElement('input');
+                    amtInput.type = 'number';
+                    amtInput.step = '0.01';
+                    amtInput.value = e.amount;
+                    cells[5].innerHTML = '';
+                    cells[5].appendChild(amtInput);
+
+                    photoCell.innerHTML = '<input type="file" accept="image/*"><div class="photo-gallery"></div>';
+                    const newFileInput = photoCell.querySelector('input');
+                    const gallery = photoCell.querySelector('.photo-gallery');
+
+                    if (e.photo) {
+                        const wrapper = document.createElement('div');
+                        wrapper.className = 'photo-wrapper';
+                        const img = document.createElement('img');
+                        img.src = e.photo;
+                        img.className = 'photo-preview';
+                        const removeBtn = document.createElement('button');
+                        removeBtn.className = 'remove-photo-btn';
+                        removeBtn.textContent = 'Remove';
+                        removeBtn.onclick = (ev) => {
+                            ev.stopPropagation();
+                            wrapper.remove();
+                        };
+                        wrapper.append(img, removeBtn);
+                        gallery.appendChild(wrapper);
+                    }
+
+                    newFileInput.addEventListener('change', () => {
+                        const file = newFileInput.files[0];
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onload = ev => {
+                                gallery.innerHTML = '';
+                                const wrapper = document.createElement('div');
+                                wrapper.className = 'photo-wrapper';
+                                const img = document.createElement('img');
+                                img.src = ev.target.result;
+                                img.className = 'photo-preview';
+                                const removeBtn = document.createElement('button');
+                                removeBtn.className = 'remove-photo-btn';
+                                removeBtn.textContent = 'Remove';
+                                removeBtn.onclick = (ev) => {
+                                    ev.stopPropagation();
+                                    wrapper.remove();
+                                };
+                                wrapper.append(img, removeBtn);
+                                gallery.appendChild(wrapper);
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    });
+
+                    const remarksInput = document.createElement('input');
+                    remarksInput.type = 'text';
+                    remarksInput.value = e.remarks || '';
+                    cells[7].innerHTML = '';
+                    cells[7].appendChild(remarksInput);
+
+                    editBtn.textContent = 'Save';
+                    editBtn.className = 'save-btn';
+                    editBtn.onclick = async () => {
+                        let finalPhoto = null;
+                        const galleryImg = gallery.querySelector('img');
+                        if (galleryImg) finalPhoto = galleryImg.src;
+
+                        entries[idx] = {
+                            date: dateInput.value,
+                            name: nameInput.value.trim(),
+                            contact: contactInput.value.trim(),
+                            category: catSelect.value,
+                            mode: modeSelect.value,
+                            photo: finalPhoto,
+                            remarks: remarksInput.value.trim(),
+                            amount: parseFloat(amtInput.value)
+                        };
+
+                        await saveData();
+                        renderCreditList(containerId);
+                        updateDashboard();
+                    };
+
+                    const cancelBtn = document.createElement('button');
+                    cancelBtn.className = 'cancel-btn';
+                    cancelBtn.textContent = 'Cancel';
+                    cancelBtn.onclick = () => renderCreditList(containerId);
+                    actions.insertBefore(cancelBtn, delBtn);
+                    delBtn.style.display = 'none';
+                };
+
+                delBtn.onclick = async () => {
+                    if (confirm('Delete this credit entry?')) {
+                        entries.splice(idx, 1);
+                        await saveData();
+                        renderCreditList(containerId);
+                        updateDashboard();
+                    }
+                };
+
+                tbody.appendChild(row);
+            });
+
+            if (containerId === 'credit-list') {
+                document.getElementById('credit-total').textContent = `Total Credit: Rs ${total.toFixed(2)}`;
+                document.getElementById('credit-total').style.display = 'block';
+            }
+        }
+
+        function renderPapadList(containerId = 'papad-list', entries = papadEntries) {
+            const month = document.getElementById('papad-month') ? document.getElementById('papad-month').value : 'all';
+            const year = document.getElementById('papad-year') ? document.getElementById('papad-year').value : 'all';
+            const filtered = getFilteredEntries(month, year, entries).sort((a, b) => a.date.localeCompare(b.date));
+
+            const cont = document.getElementById(containerId);
+            if (!cont) return;
+            cont.innerHTML = filtered.length === 0 ? '<div class="no-data">No papad expenses</div>' : '';
+
+            if (filtered.length === 0) {
+                document.getElementById(containerId === 'papad-list' ? 'papad-total' : '').style.display = 'none';
+                return;
+            }
+
+            let currentMonth = '';
+            let currentTable = null;
+            let total = 0;
+
+            filtered.forEach(e => {
+                const entryMonth = new Date(e.date).toLocaleString(currentLang === 'en' ? 'default' : currentLang, { month: 'long', year: 'numeric' });
+                if (entryMonth !== currentMonth) {
+                    currentMonth = entryMonth;
+
+                    const separator = document.createElement('div');
+                    separator.className = 'month-separator';
+                    separator.textContent = currentMonth;
+                    cont.appendChild(separator);
+
+                    currentTable = document.createElement('table');
+                    currentTable.innerHTML = `<thead><tr><th>Date</th><th>Category</th><th>Mode</th><th>Amount</th><th>Photo</th><th>Remarks</th><th>Actions</th></tr></thead><tbody></tbody>`;
+                    cont.appendChild(currentTable);
+                }
+
+                total += e.amount;
+
+                const tbody = currentTable.querySelector('tbody');
+                const idx = entries.indexOf(e);
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${e.date}</td>
+                    <td>${e.category}</td>
+                    <td>${e.mode}</td>
+                    <td class="amount">Rs ${e.amount.toFixed(2)}</td>
+                    <td class="photo-gallery"></td>
+                    <td>${e.remarks || '-'}</td>
+                    <td class="actions"></td>
+                `;
+
+                const photoCell = row.cells[4];
+                if (e.photo) {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'photo-wrapper';
+                    const img = document.createElement('img');
+                    img.src = e.photo;
+                    img.className = 'photo-preview';
+                    img.onclick = () => {
+                        document.getElementById('modal-photo').src = e.photo;
+                        document.getElementById('photo-modal').style.display = 'flex';
+                    };
+                    const downloadBtn = document.createElement('button');
+                    downloadBtn.className = 'download-photo-btn';
+                    downloadBtn.textContent = 'Download';
+                    downloadBtn.onclick = (ev) => {
+                        ev.stopPropagation();
+                        const a = document.createElement('a');
+                        a.href = e.photo;
+                        a.download = `papad_photo_${e.date}.jpg`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    };
+                    wrapper.appendChild(img);
+                    wrapper.appendChild(downloadBtn);
+                    photoCell.appendChild(wrapper);
+                } else {
+                    photoCell.textContent = '-';
+                }
+
+                const actions = row.cells[6];
+                const editBtn = document.createElement('button');
+                editBtn.className = 'edit-btn';
+                editBtn.textContent = 'Edit';
+                const delBtn = document.createElement('button');
+                delBtn.className = 'delete-btn';
+                delBtn.textContent = 'Delete';
+                actions.append(editBtn, delBtn);
+
+                editBtn.onclick = () => {
+                    const cells = row.cells;
+
+                    const dateInput = document.createElement('input');
+                    dateInput.type = 'date';
+                    dateInput.value = e.date;
+                    cells[0].innerHTML = '';
+                    cells[0].appendChild(dateInput);
+
+                    const catSelect = document.createElement('select');
+                    ['Utensils','Groceries','Event','Bills','Medicine','others'].forEach(c => {
+                        const o = document.createElement('option');
+                        o.value = c;
+                        o.textContent = c;
+                        if (c === e.category) o.selected = true;
+                        catSelect.appendChild(o);
+                    });
+                    cells[1].innerHTML = '';
+                    cells[1].appendChild(catSelect);
+
+                    const modeSelect = document.createElement('select');
+                    ['cash','G-Pay','online','BT','other'].forEach(m => {
+                        const o = document.createElement('option');
+                        o.value = m;
+                        o.textContent = m;
+                        if (m === e.mode) o.selected = true;
+                        modeSelect.appendChild(o);
+                    });
+                    cells[2].innerHTML = '';
+                    cells[2].appendChild(modeSelect);
+
+                    const amtInput = document.createElement('input');
+                    amtInput.type = 'number';
+                    amtInput.step = '0.01';
+                    amtInput.value = e.amount;
+                    cells[3].innerHTML = '';
+                    cells[3].appendChild(amtInput);
+
+                    photoCell.innerHTML = '<input type="file" accept="image/*"><div class="photo-gallery"></div>';
+                    const newFileInput = photoCell.querySelector('input');
+                    const gallery = photoCell.querySelector('.photo-gallery');
+
+                    if (e.photo) {
+                        const wrapper = document.createElement('div');
+                        wrapper.className = 'photo-wrapper';
+                        const img = document.createElement('img');
+                        img.src = e.photo;
+                        img.className = 'photo-preview';
+                        const removeBtn = document.createElement('button');
+                        removeBtn.className = 'remove-photo-btn';
+                        removeBtn.textContent = 'Remove';
+                        removeBtn.onclick = (ev) => {
+                            ev.stopPropagation();
+                            wrapper.remove();
+                        };
+                        wrapper.append(img, removeBtn);
+                        gallery.appendChild(wrapper);
+                    }
+
+                    newFileInput.addEventListener('change', () => {
+                        const file = newFileInput.files[0];
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onload = ev => {
+                                gallery.innerHTML = '';
+                                const wrapper = document.createElement('div');
+                                wrapper.className = 'photo-wrapper';
+                                const img = document.createElement('img');
+                                img.src = ev.target.result;
+                                img.className = 'photo-preview';
+                                const removeBtn = document.createElement('button');
+                                removeBtn.className = 'remove-photo-btn';
+                                removeBtn.textContent = 'Remove';
+                                removeBtn.onclick = (ev) => {
+                                    ev.stopPropagation();
+                                    wrapper.remove();
+                                };
+                                wrapper.append(img, removeBtn);
+                                gallery.appendChild(wrapper);
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    });
+
+                    const remarksInput = document.createElement('input');
+                    remarksInput.type = 'text';
+                    remarksInput.value = e.remarks || '';
+                    cells[5].innerHTML = '';
+                    cells[5].appendChild(remarksInput);
+
+                    editBtn.textContent = 'Save';
+                    editBtn.className = 'save-btn';
+                    editBtn.onclick = async () => {
+                        let finalPhoto = null;
+                        const galleryImg = gallery.querySelector('img');
+                        if (galleryImg) finalPhoto = galleryImg.src;
+
+                        entries[idx] = {
+                            date: dateInput.value,
+                            category: catSelect.value,
+                            mode: modeSelect.value,
+                            photo: finalPhoto,
+                            remarks: remarksInput.value.trim(),
+                            amount: parseFloat(amtInput.value)
+                        };
+
+                        await saveData();
+                        renderPapadList(containerId);
+                        updateDashboard();
+                    };
+
+                    const cancelBtn = document.createElement('button');
+                    cancelBtn.className = 'cancel-btn';
+                    cancelBtn.textContent = 'Cancel';
+                    cancelBtn.onclick = () => renderPapadList(containerId);
+                    actions.insertBefore(cancelBtn, delBtn);
+                    delBtn.style.display = 'none';
+                };
+
+                delBtn.onclick = async () => {
+                    if (confirm('Delete this papad expense?')) {
+                        entries.splice(idx, 1);
+                        await saveData();
+                        renderPapadList(containerId);
+                        updateDashboard();
+                    }
+                };
+
+                tbody.appendChild(row);
+            });
+
+            if (containerId === 'papad-list') {
+                document.getElementById('papad-total').textContent = `Total Papad: Rs ${total.toFixed(2)}`;
+                document.getElementById('papad-total').style.display = 'block';
+            }
         }
 
         function renderLists() {
             const month = document.getElementById('list-month').value;
             const year = document.getElementById('list-year').value;
-            const { milk, water } = getFilteredEntries(month, year);
+            const milk = getFilteredEntries(month, year, milkEntries);
+            const water = getFilteredEntries(month, year, waterEntries);
+            const extra = getFilteredEntries(month, year, extraEntries);
+            const credit = getFilteredEntries(month, year, creditEntries);
+            const papad = getFilteredEntries(month, year, papadEntries);
 
             renderGroupedList('milk-list', milk, 'milk');
             renderGroupedList('water-list', water, 'water');
-            renderExtraList();
+            renderExtraList('extra-list', extraEntries, month, year);
+            renderCreditList('credit-list-short', creditEntries);
+            renderPapadList('papad-list-short', papadEntries);
 
             const grandTotal = milk.reduce((s,e)=>s+e.amount,0) + water.reduce((s,e)=>s+e.amount,0) +
-                extraEntries.filter(e => {
-                    const d = new Date(e.date);
-                    return (month === 'all' || d.getMonth() === parseInt(month)) && (year === 'all' || d.getFullYear() === parseInt(year));
-                }).reduce((s,e)=>s+e.amount,0);
+                extra.reduce((s,e)=>s+e.amount,0) + papad.reduce((s,e)=>s+e.amount,0) - credit.reduce((s,e)=>s+e.amount,0);
 
             const grandDiv = document.getElementById('list-grand-total');
             if (grandDiv) {
-                if (grandTotal > 0) {
+                if (grandTotal !== 0) {
                     grandDiv.textContent = `Grand Total: Rs ${grandTotal.toFixed(2)}`;
                     grandDiv.style.display = 'block';
                 } else {
@@ -1256,8 +2236,11 @@
             if (tabName === 'dashboard') updateDashboard();
             if (tabName === 'calendar') renderCalendar();
             if (tabName === 'lists') renderLists();
+            if (tabName === 'credit') renderCreditList();
+            if (tabName === 'papad') renderPapadList();
         }
     </script>
 </body>
 </html>
+
 
