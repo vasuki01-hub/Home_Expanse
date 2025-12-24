@@ -199,7 +199,7 @@
                 background: #2c3e50;
             }
             form {
-                display: flow;
+                display: grid;
                 grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
                 gap: 15px;
                 padding: 20px;
@@ -551,7 +551,7 @@
                             PDF</button>
                         <button class="pdf-btn" onclick="generateExtraPDF()" data-lang="download_extra_pdf">Extra
                             PDF</button>
-                        <button class="pdf-btn" onclick="generatePapadPDF()">Papad PDF</button>
+                        <button class="pdf-btn" onclick="generatePapadPDF()" data-lang="download_papad_pdf">Papad PDF</button>
                     </div>
                 </div>
                 <div class="stats">
@@ -576,11 +576,11 @@
                         <p id="dash-extra-amt">Rs 0</p>
                     </div>
                     <div class="stat">
-                        <h3>Papad Expenses</h3>
+                        <h3 data-lang="papad_expense">Papad Expenses</h3>
                         <p id="dash-papad-amt">Rs 0</p>
                     </div>
                     <div class="stat">
-                        <h3>Total Credits</h3>
+                        <h3 data-lang="total_credits">Total Credits</h3>
                         <p id="dash-credit-amt">Rs 0</p>
                     </div>
                     <div class="stat">
@@ -663,15 +663,15 @@
                     <div id="credit-photo-preview" class="photo-gallery"></div>
                     <input type="text" id="credit-remarks" placeholder="Remarks (optional)">
                     <input type="number" id="credit-amount" placeholder="Amount (₹)" min="0" step="0.01" required>
-                    <button type="submit">Submit</button>
+                    <button type="submit" data-lang="submit">Submit</button>
                 </form>
-                <h2>View Credit Balances</h2>
+                <h2 data-lang="view_credit">View Credit Balances</h2>
                 <div class="filter">
-                    <label>Month:</label>
+                    <label data-lang="filter_month">Month:</label>
                     <select id="credit-month" onchange="renderCreditList()"></select>
-                    <label>Year:</label>
+                    <label data-lang="filter_year">Year:</label>
                     <select id="credit-year" onchange="renderCreditList()"></select>
-                    <label>Category:</label>
+                    <label data-lang="filter_category">Category:</label>
                     <select id="credit-filter-category" onchange="renderCreditList()">
                         <option value="all">All</option>
                         <option value="client">Client</option>
@@ -684,7 +684,7 @@
             </section>
             <!-- Add Papad Expense -->
             <section id="papad" class="tab-content" style="display:none;">
-                <h2>Add Papad Expense</h2>
+                <h2 data-lang="add_papad">Add Papad Expense</h2>
                 <form id="papad-form">
                     <input type="date" id="papad-date" required>
                     <select id="papad-category" required>
@@ -708,13 +708,13 @@
                     <div id="papad-photo-preview" class="photo-gallery"></div>
                     <input type="text" id="papad-remarks" placeholder="Remarks (optional)">
                     <input type="number" id="papad-amount" placeholder="Amount (₹)" min="0" step="0.01" required>
-                    <button type="submit">Submit</button>
+                    <button type="submit" data-lang="submit">Submit</button>
                 </form>
-                <h2>View Papad Expenses</h2>
+                <h2 data-lang="view_papad">View Papad Expenses</h2>
                 <div class="filter">
-                    <label>Month:</label>
+                    <label data-lang="filter_month">Month:</label>
                     <select id="papad-month" onchange="renderPapadList()"></select>
-                    <label>Year:</label>
+                    <label data-lang="filter_year">Year:</label>
                     <select id="papad-year" onchange="renderPapadList()"></select>
                 </div>
                 <div id="papad-list"></div>
@@ -744,12 +744,12 @@
                 <h2 data-lang="extra_entries">Extra Expenses</h2>
                 <div id="extra-total" class="month-total" style="display:none;"></div>
                 <div id="extra-list"></div>
-                <h2>Credit Balances</h2>
-                <div id="credit-total" class="month-total" style="display:none;"></div>
-                <div id="credit-list-short"></div>
-                <h2>Papad Expenses</h2>
+                <h2 data-lang="papad_expenses">Papad Expenses</h2>
                 <div id="papad-total" class="month-total" style="display:none;"></div>
                 <div id="papad-list-short"></div>
+                <h2 data-lang="credit_balances">Credit Balances</h2>
+                <div id="credit-total" class="month-total" style="display:none;"></div>
+                <div id="credit-list-short"></div>
                 <div id="list-grand-total" class="grand-total" style="display:none;"></div>
             </section>
         </div>
@@ -768,6 +768,15 @@
                     <input type="tel" id="edit-contact" placeholder="Contact Number">
                     <label>Profile Photo Size:</label>
                     <select id="photo-size" class="size-selector">
+                        <option value="100">10x10 px</option>
+                        <option value="100">20x20 px</option>
+                        <option value="100">30x30 px</option>
+                        <option value="100">40x40 px</option>
+                        <option value="100">50x50 px</option>
+                        <option value="100">60x60 px</option>
+                        <option value="100">70x70 px</option>
+                        <option value="100">80x80 px</option>
+                        <option value="100">90x90 px</option>
                         <option value="100">100x100 px</option>
                         <option value="150">150x150 px</option>
                         <option value="200">200x200 px</option>
@@ -819,18 +828,27 @@
                     total_water_btl: "Total Water (Btl)",
                     water_expense: "Water Expense",
                     extra_expense: "Extra Expenses",
+                    papad_expense: "Papad Expenses",
+                    total_credits: "Total Credits",
                     total_expense: "Grand Total",
                     milk_entries: "Milk Entries",
                     water_entries: "Water Entries",
                     extra_entries: "Extra Expenses",
+                    papad_expenses: "Papad Expenses",
+                    credit_balances: "Credit Balances",
+                    view_credit: "View Credit Balances",
+                    view_papad: "View Papad Expenses",
+                    filter_category: "Category:",
                     download_milk_pdf: "Milk PDF",
                     download_water_pdf: "Water PDF",
                     download_extra_pdf: "Extra PDF",
+                    download_papad_pdf: "Papad PDF",
                     milk_price: "Fixed Price: Rs 60 per Liter",
                     water_price: "Fixed Price: Rs 15 per Bottle",
                     add_milk_btn: "Add Milk Entry",
                     add_water_btn: "Add Water Entry",
-                    add_extra_btn: "Add Extra Expense"
+                    add_extra_btn: "Add Extra Expense",
+                    submit: "Submit"
                 },
                 hi: {
                     Dashboard: "डैशबोर्ड",
@@ -848,15 +866,23 @@
                     total_water_btl: "कुल पानी (बोतल)",
                     water_expense: "पानी खर्च",
                     extra_expense: "अतिरिक्त खर्च",
+                    papad_expense: "पापड़ खर्च",
+                    total_credits: "कुल क्रेडिट",
                     total_expense: "कुल योग",
                     milk_entries: "दूध प्रविष्टियाँ",
                     water_entries: "पानी प्रविष्टियाँ",
                     extra_entries: "अतिरिक्त खर्च",
+                    papad_expenses: "पापड़ खर्च",
+                    credit_balances: "क्रेडिट बैलेंस",
+                    view_credit: "क्रेडिट बैलेंस देखें",
+                    view_papad: "पापड़ खर्च देखें",
+                    filter_category: "श्रेणी:",
                     milk_price: "निश्चित मूल्य: Rs 60 प्रति लीटर",
                     water_price: "निश्चित मूल्य: Rs 15 प्रति बोतल",
                     add_milk_btn: "दूध प्रविष्टि जोड़ें",
                     add_water_btn: "पानी प्रविष्टि जोड़ें",
-                    add_extra_btn: "अतिरिक्त खर्च जोड़ें"
+                    add_extra_btn: "अतिरिक्त खर्च जोड़ें",
+                    submit: "जमा करें"
                 },
                 gu: {
                     Dashboard: "ડૅશબોર્ડ",
@@ -874,15 +900,23 @@
                     total_water_btl: "કુલ પાણી (બોટલ)",
                     water_expense: "પાણી ખર્ચ",
                     extra_expense: "અતિરિક્ત ખર્ચ",
+                    papad_expense: "પાપડ ખર્ચ",
+                    total_credits: "કુલ ક્રેડિટ",
                     total_expense: "કુલ યોગ",
                     milk_entries: "દૂધ એન્ટ્રીઓ",
                     water_entries: "પાણી એન્ટ્રીઓ",
                     extra_entries: "અતિરિક્ત ખર્ચ",
+                    papad_expenses: "પાપડ ખર્ચ",
+                    credit_balances: "ક્રેડિટ બેલેન્સ",
+                    view_credit: "ક્રેડિટ બેલેન્સ જુઓ",
+                    view_papad: "પાપડ ખર્ચ જુઓ",
+                    filter_category: "શ્રેણી:",
                     milk_price: "નિશ્ચિત કિંમત: Rs 60 પ્રતિ લિટર",
                     water_price: "નિશ્ચિત કિંમત: Rs 15 પ્રતિ બોટલ",
                     add_milk_btn: "દૂધ એન્ટ્રી ઉમેરો",
                     add_water_btn: "પાણી એન્ટ્રી ઉમેરો",
-                    add_extra_btn: "અતિરિક્ત ખર્ચ ઉમેરો"
+                    add_extra_btn: "અતિરિક્ત ખર્ચ ઉમેરો",
+                    submit: "સબમિટ કરો"
                 }
             };
             let currentLang = 'en';
@@ -1090,7 +1124,7 @@
                     const docRef = db.collection(`users/${currentUser.uid}/expenses`).doc('data');
                     const doc = await docRef.get();
                     if (doc.exists) {
-                        data = doc.data();
+                        const data = doc.data();
                         milkEntries = data.milkEntries || [];
                         waterEntries = data.waterEntries || [];
                         extraEntries = data.extraEntries || [];
@@ -1316,7 +1350,7 @@
                     await saveData();
                     e.target.reset();
                     document.getElementById('credit-photo-preview').innerHTML = '';
-                    renderCreditList();
+                    renderCreditList('credit-list');
                     updateDashboard();
                 });
             }
@@ -1346,6 +1380,7 @@
                     document.getElementById('papad-photo-preview').innerHTML = '';
                     renderPapadList();
                     updateDashboard();
+                    renderLists();
                 });
             }
             function getFilteredEntries(month, year, entries) {
@@ -1550,11 +1585,19 @@
                 if (!cont) return;
                 cont.innerHTML = entries.length === 0 ? '<div class="no-data">No entries</div>' : '';
                 if (entries.length === 0) return;
-                let currentMonth = '';
+                let currentMonth = null;
+                let currentTotal = 0;
                 let currentTable = null;
                 entries.sort((a, b) => a.date.localeCompare(b.date)).forEach((e, idx) => {
                     const entryMonth = new Date(e.date).toLocaleString(currentLang === 'en' ? 'default' : currentLang, { month: 'long', year: 'numeric' });
                     if (entryMonth !== currentMonth) {
+                        if (currentTable) {
+                            const tfoot = document.createElement('tfoot');
+                            const row = document.createElement('tr');
+                            row.innerHTML = `<td colspan="2"></td><td class="amount">Month Total: Rs ${currentTotal.toFixed(2)}</td><td></td>`;
+                            tfoot.appendChild(row);
+                            currentTable.appendChild(tfoot);
+                        }
                         currentMonth = entryMonth;
                         const separator = document.createElement('div');
                         separator.className = 'month-separator';
@@ -1563,6 +1606,7 @@
                         currentTable = document.createElement('table');
                         currentTable.innerHTML = `<thead><tr><th>Date</th><th>Quantity</th><th>Amount</th><th>Actions</th></tr></thead><tbody></tbody>`;
                         cont.appendChild(currentTable);
+                        currentTotal = 0;
                     }
                     const tbody = currentTable.querySelector('tbody');
                     const row = document.createElement('tr');
@@ -1624,7 +1668,15 @@
                         }
                     };
                     tbody.appendChild(row);
+                    currentTotal += e.amount;
                 });
+                if (currentTable) {
+                    const tfoot = document.createElement('tfoot');
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td colspan="2"></td><td class="amount">Month Total: Rs ${currentTotal.toFixed(2)}</td><td></td>`;
+                    tfoot.appendChild(row);
+                    currentTable.appendChild(tfoot);
+                }
             }
             function renderExtraList(containerId = 'extra-list', entries = extraEntries, month = 'all', year = 'all') {
                 const filtered = getFilteredEntries(month, year, entries).sort((a, b) => a.date.localeCompare(b.date));
@@ -1637,11 +1689,18 @@
                 }
                 let currentMonth = '';
                 let currentTable = null;
-                let total = 0;
+                let monthTotal = 0;
                 filtered.forEach((e, fIdx) => {
                     const actualIdx = entries.indexOf(e);
                     const entryMonth = new Date(e.date).toLocaleString(currentLang === 'en' ? 'default' : currentLang, { month: 'long', year: 'numeric' });
                     if (entryMonth !== currentMonth) {
+                        if (currentTable) {
+                            const tfoot = document.createElement('tfoot');
+                            const row = document.createElement('tr');
+                            row.innerHTML = `<td colspan="3" style="text-align:right">Month Total:</td><td class="amount">Rs ${monthTotal.toFixed(2)}</td><td colspan="2"></td>`;
+                            tfoot.appendChild(row);
+                            currentTable.appendChild(tfoot);
+                        }
                         currentMonth = entryMonth;
                         const separator = document.createElement('div');
                         separator.className = 'month-separator';
@@ -1650,8 +1709,9 @@
                         currentTable = document.createElement('table');
                         currentTable.innerHTML = `<thead><tr><th>Date</th><th>Category</th><th>Description</th><th class="amount">Amount</th><th>Photos</th><th class="actions">Actions</th></tr></thead><tbody></tbody>`;
                         cont.appendChild(currentTable);
+                        monthTotal = 0;
                     }
-                    total += e.amount;
+                    monthTotal += e.amount;
                     const tbody = currentTable.querySelector('tbody');
                     const row = document.createElement('tr');
                     row.innerHTML = `
@@ -1685,6 +1745,13 @@
                                 document.body.appendChild(a);
                                 a.click();
                                 document.body.removeChild(a);
+                            };
+                            const removeBtn = document.createElement('button');
+                            removeBtn.className = 'remove-photo-btn';
+                            removeBtn.textContent = 'Remove';
+                            removeBtn.onclick = (ev) => {
+                                ev.stopPropagation();
+                                wrapper.remove();
                             };
                             wrapper.appendChild(img);
                             wrapper.appendChild(downloadBtn);
@@ -1754,12 +1821,20 @@
                                 a.click();
                                 document.body.removeChild(a);
                             };
+                            const removeBtn = document.createElement('button');
+                            removeBtn.className = 'remove-photo-btn';
+                            removeBtn.textContent = 'Remove';
+                            removeBtn.onclick = (ev) => {
+                                ev.stopPropagation();
+                                wrapper.remove();
+                            };
                             wrapper.appendChild(img);
                             wrapper.appendChild(downloadBtn);
+                            wrapper.appendChild(removeBtn);
                             gallery.appendChild(wrapper);
                         });
                         newFileInput.addEventListener('change', () => {
-                            Array.from(newFileInput.files).forEach(file => {
+                            Array.from(newFileInput.files).forEach((file, i) => {
                                 const reader = new FileReader();
                                 reader.onload = ev => {
                                     const wrapper = document.createElement('div');
@@ -1774,8 +1849,8 @@
                                     const downloadBtn = document.createElement('button');
                                     downloadBtn.className = 'download-photo-btn';
                                     downloadBtn.textContent = 'Download';
-                                    downloadBtn.onclick = (ev) => {
-                                        ev.stopPropagation();
+                                    downloadBtn.onclick = (evv) => {
+                                        evv.stopPropagation();
                                         const a = document.createElement('a');
                                         a.href = ev.target.result;
                                         a.download = `extra_photo_${e.date}_${i + 1}.jpg`;
@@ -1783,8 +1858,16 @@
                                         a.click();
                                         document.body.removeChild(a);
                                     };
+                                    const removeBtn = document.createElement('button');
+                                    removeBtn.className = 'remove-photo-btn';
+                                    removeBtn.textContent = 'Remove';
+                                    removeBtn.onclick = (evv) => {
+                                        evv.stopPropagation();
+                                        wrapper.remove();
+                                    };
                                     wrapper.appendChild(img);
                                     wrapper.appendChild(downloadBtn);
+                                    wrapper.appendChild(removeBtn);
                                     gallery.appendChild(wrapper);
                                 };
                                 reader.readAsDataURL(file);
@@ -1793,8 +1876,7 @@
                         editBtn.textContent = 'Save';
                         editBtn.className = 'save-btn';
                         editBtn.onclick = async () => {
-                            const finalPhotos = [];
-                            gallery.querySelectorAll('.photo-preview').forEach(img => finalPhotos.push(img.src));
+                            const finalPhotos = Array.from(gallery.querySelectorAll('.photo-preview')).map(img => img.src);
                             entries[actualIdx] = {
                                 date: dateInput.value,
                                 category: catSelect.value,
@@ -1823,32 +1905,48 @@
                     };
                     tbody.appendChild(row);
                 });
+                if (currentTable) {
+                    const tfoot = document.createElement('tfoot');
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td colspan="3" style="text-align:right">Month Total:</td><td class="amount">Rs ${monthTotal.toFixed(2)}</td><td colspan="2"></td>`;
+                    tfoot.appendChild(row);
+                    currentTable.appendChild(tfoot);
+                }
                 if (containerId === 'extra-list') {
-                    document.getElementById('extra-total').textContent = `Total Extra: Rs ${total.toFixed(2)}`;
+                    document.getElementById('extra-total').textContent = `Total Extra: Rs ${filtered.reduce((s, e) => s + e.amount, 0).toFixed(2)}`;
                     document.getElementById('extra-total').style.display = 'block';
                 }
             }
-            function renderCreditList(containerId = 'credit-list', entries = creditEntries) {
-                const month = document.getElementById('credit-month') ? document.getElementById('credit-month').value : 'all';
-                const year = document.getElementById('credit-year') ? document.getElementById('credit-year').value : 'all';
-                const category = document.getElementById('credit-filter-category') ? document.getElementById('credit-filter-category').value : 'all';
-                let filtered = getFilteredEntries(month, year, entries);
+
+            
+            function renderCreditList(containerId = 'credit-list', entries = creditEntries, month='all', year='all', cat='all') {
+                const m = month !== undefined ? month : document.getElementById('credit-month')?.value || 'all';
+                const y = year !== undefined ? year : document.getElementById('credit-year')?.value || 'all';
+                const category = cat !== undefined ? cat : document.getElementById('credit-filter-category')?.value || 'all';
+                let filtered = getFilteredEntries(m, y, entries);
                 if (category !== 'all') filtered = filtered.filter(e => e.category === category);
                 filtered = filtered.sort((a, b) => a.date.localeCompare(b.date));
                 const cont = document.getElementById(containerId);
                 if (!cont) return;
                 cont.innerHTML = filtered.length === 0 ? '<div class="no-data">No credit entries</div>' : '';
                 if (filtered.length === 0) {
-                    document.getElementById(containerId === 'credit-list' ? 'credit-total' : '').style.display = 'none';
+                    document.getElementById(containerId === 'credit-list' ? 'credit-total' : 'credit-list-short' ? 'credit-total' : '').style.display = 'none';
                     return;
-                }
+            }
                 let currentMonth = '';
                 let currentTable = null;
-                let total = 0;
+                let monthTotal = 0;
                 filtered.forEach((e, fIdx) => {
                     const actualIdx = entries.indexOf(e);
                     const entryMonth = new Date(e.date).toLocaleString(currentLang === 'en' ? 'default' : currentLang, { month: 'long', year: 'numeric' });
                     if (entryMonth !== currentMonth) {
+                        if (currentTable) {
+                            const tfoot = document.createElement('tfoot');
+                            const row = document.createElement('tr');
+                            row.innerHTML = `<td colspan="5" style="text-align:right">Month Total:</td><td class="amount">Rs ${monthTotal.toFixed(2)}</td><td colspan="3"></td>`;
+                            tfoot.appendChild(row);
+                            currentTable.appendChild(tfoot);
+                        }
                         currentMonth = entryMonth;
                         const separator = document.createElement('div');
                         separator.className = 'month-separator';
@@ -1857,8 +1955,9 @@
                         currentTable = document.createElement('table');
                         currentTable.innerHTML = `<thead><tr><th>Date</th><th>Name</th><th>Contact</th><th>Category</th><th>Mode</th><th>Amount</th><th>Photo</th><th>Remarks</th><th>Actions</th></tr></thead><tbody></tbody>`;
                         cont.appendChild(currentTable);
+                        monthTotal = 0;
                     }
-                    total += e.amount;
+                    monthTotal += e.amount;
                     const tbody = currentTable.querySelector('tbody');
                     const row = document.createElement('tr');
                     row.innerHTML = `
@@ -2013,17 +2112,19 @@
                                 category: catSelect.value,
                                 mode: modeSelect.value,
                                 photo: finalPhoto,
-                                remarks: remarksInput.value.trim(),
+                                remarks: remarks,
+
+                                Input:value.trim(),
                                 amount: parseFloat(amtInput.value)
                             };
                             await saveData();
-                            renderCreditList(containerId);
+                            renderCreditList(containerId, entries, m, y, category);
                             updateDashboard();
                         };
                         const cancelBtn = document.createElement('button');
                         cancelBtn.className = 'cancel-btn';
                         cancelBtn.textContent = 'Cancel';
-                        cancelBtn.onclick = () => renderCreditList(containerId);
+                        cancelBtn.onclick = () => renderCreditList(containerId, entries, m, y, category);
                         actions.insertBefore(cancelBtn, delBtn);
                         delBtn.style.display = 'none';
                     };
@@ -2031,35 +2132,52 @@
                         if (confirm('Delete this credit entry?')) {
                             entries.splice(actualIdx, 1);
                             await saveData();
-                            renderCreditList(containerId);
+                            renderCreditList(containerId, entries, m, y, category);
                             updateDashboard();
                         }
                     };
                     tbody.appendChild(row);
                 });
-                if (containerId === 'credit-list') {
-                    document.getElementById('credit-total').textContent = `Total Credit: Rs ${total.toFixed(2)}`;
-                    document.getElementById('credit-total').style.display = 'block';
+                if (currentTable) {
+                    const tfoot = document.createElement('tfoot');
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td colspan="5" style="text-align:right">Month Total:</td><td class="amount">Rs ${monthTotal.toFixed(2)}</td><td colspan="3"></td>`;
+                    tfoot.appendChild(row);
+                    currentTable.appendChild(tfoot);
+                }
+                if (containerId === 'credit-list-short' || containerId === 'credit-list') {
+                    const totalEl = document.getElementById('credit-total');
+                    if (totalEl) {
+                        totalEl.textContent = `Total Credit: Rs ${filtered.reduce((s, e) => s + e.amount, 0).toFixed(2)}`;
+                        totalEl.style.display = 'block';
+                    }
                 }
             }
-            function renderPapadList(containerId = 'papad-list', entries = papadEntries) {
-                const month = document.getElementById('papad-month') ? document.getElementById('papad-month').value : 'all';
-                const year = document.getElementById('papad-year') ? document.getElementById('papad-year').value : 'all';
-                const filtered = getFilteredEntries(month, year, entries).sort((a, b) => a.date.localeCompare(b.date));
+            function renderPapadList(containerId = 'papad-list', entries = papadEntries, month='all', year='all') {
+                const m = month !== undefined ? month : document.getElementById('papad-month')?.value || 'all';
+                const y = year !== undefined ? year : document.getElementById('papad-year')?.value || 'all';
+                const filtered = getFilteredEntries(m, y, entries).sort((a, b) => a.date.localeCompare(b.date));
                 const cont = document.getElementById(containerId);
                 if (!cont) return;
                 cont.innerHTML = filtered.length === 0 ? '<div class="no-data">No papad expenses</div>' : '';
                 if (filtered.length === 0) {
-                    document.getElementById(containerId === 'papad-list' ? 'papad-total' : '').style.display = 'none';
+                    document.getElementById(containerId === 'papad-list' ? 'papad-total' : 'papad-list-short' ? 'papad-total' : '').style.display = 'none';
                     return;
                 }
                 let currentMonth = '';
                 let currentTable = null;
-                let total = 0;
+                let monthTotal = 0;
                 filtered.forEach((e, fIdx) => {
                     const actualIdx = entries.indexOf(e);
                     const entryMonth = new Date(e.date).toLocaleString(currentLang === 'en' ? 'default' : currentLang, { month: 'long', year: 'numeric' });
                     if (entryMonth !== currentMonth) {
+                        if (currentTable) {
+                            const tfoot = document.createElement('tfoot');
+                            const row = document.createElement('tr');
+                            row.innerHTML = `<td colspan="3" style="text-align:right">Month Total:</td><td class="amount">Rs ${monthTotal.toFixed(2)}</td><td colspan="3"></td>`;
+                            tfoot.appendChild(row);
+                            currentTable.appendChild(tfoot);
+                        }
                         currentMonth = entryMonth;
                         const separator = document.createElement('div');
                         separator.className = 'month-separator';
@@ -2068,8 +2186,9 @@
                         currentTable = document.createElement('table');
                         currentTable.innerHTML = `<thead><tr><th>Date</th><th>Category</th><th>Mode</th><th>Amount</th><th>Photo</th><th>Remarks</th><th>Actions</th></tr></thead><tbody></tbody>`;
                         cont.appendChild(currentTable);
+                        monthTotal = 0;
                     }
-                    total += e.amount;
+                    monthTotal += e.amount;
                     const tbody = currentTable.querySelector('tbody');
                     const row = document.createElement('tr');
                     row.innerHTML = `
@@ -2214,13 +2333,13 @@
                                 amount: parseFloat(amtInput.value)
                             };
                             await saveData();
-                            renderPapadList(containerId);
+                            renderPapadList(containerId, entries, m, y);
                             updateDashboard();
                         };
                         const cancelBtn = document.createElement('button');
                         cancelBtn.className = 'cancel-btn';
                         cancelBtn.textContent = 'Cancel';
-                        cancelBtn.onclick = () => renderPapadList(containerId);
+                        cancelBtn.onclick = () => renderPapadList(containerId, entries, m, y);
                         actions.insertBefore(cancelBtn, delBtn);
                         delBtn.style.display = 'none';
                     };
@@ -2228,15 +2347,25 @@
                         if (confirm('Delete this papad expense?')) {
                             entries.splice(actualIdx, 1);
                             await saveData();
-                            renderPapadList(containerId);
+                            renderPapadList(containerId, entries, m, y);
                             updateDashboard();
                         }
                     };
                     tbody.appendChild(row);
                 });
-                if (containerId === 'papad-list') {
-                    document.getElementById('papad-total').textContent = `Total Papad: Rs ${total.toFixed(2)}`;
-                    document.getElementById('papad-total').style.display = 'block';
+                if (currentTable) {
+                    const tfoot = document.createElement('tfoot');
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td colspan="3" style="text-align:right">Month Total:</td><td class="amount">Rs ${monthTotal.toFixed(2)}</td><td colspan="3"></td>`;
+                    tfoot.appendChild(row);
+                    currentTable.appendChild(tfoot);
+                }
+                if (containerId === 'papad-list-short' || containerId === 'papad-list') {
+                    const totalEl = document.getElementById('papad-total');
+                    if (totalEl) {
+                        totalEl.textContent = `Total Papad: Rs ${filtered.reduce((s, e) => s + e.amount, 0).toFixed(2)}`;
+                        totalEl.style.display = 'block';
+                    }
                 }
             }
             function renderLists() {
@@ -2250,14 +2379,14 @@
                 renderGroupedList('milk-list', milk, 'milk');
                 renderGroupedList('water-list', water, 'water');
                 renderExtraList('extra-list', extraEntries, month, year);
-                renderCreditList('credit-list-short', creditEntries);
-                renderPapadList('papad-list-short', papadEntries);
+                renderPapadList('papad-list-short', papadEntries, month, year);
+                renderCreditList('credit-list-short', creditEntries, month, year, 'all');
                 const grandTotal = milk.reduce((s, e) => s + e.amount, 0) + water.reduce((s, e) => s + e.amount, 0) +
                     extra.reduce((s, e) => s + e.amount, 0) + papad.reduce((s, e) => s + e.amount, 0) - credit.reduce((s, e) => s + e.amount, 0);
                 const grandDiv = document.getElementById('list-grand-total');
                 if (grandDiv) {
                     if (grandTotal !== 0) {
-                        grandDiv.textContent = `Grand Total: Rs ${grandTotal.toFixed(2)}`;
+                        grandDiv.innerHTML = `<h3 style="text-align: center; color: #e74c3c; font-size: 1.5em;">Grand Total: Rs ${grandTotal.toFixed(2)}</h3>`;
                         grandDiv.style.display = 'block';
                     } else {
                         grandDiv.style.display = 'none';
@@ -2266,6 +2395,10 @@
             }
             function toggleTheme() {
                 document.body.classList.toggle('dark-mode');
+                localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+            }
+            if (localStorage.getItem('theme') === 'dark') {
+                document.body.classList.add('dark-mode');
             }
             function openTab(tabName) {
                 document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
@@ -2277,7 +2410,7 @@
                 if (tabName === 'dashboard') updateDashboard();
                 if (tabName === 'calendar') renderCalendar();
                 if (tabName === 'lists') renderLists();
-                if (tabName === 'credit') renderCreditList();
+                if (tabName === 'credit') renderCreditList('credit-list');
                 if (tabName === 'papad') renderPapadList();
             }
             // Photo modal close on escape
@@ -2287,7 +2420,7 @@
                     document.getElementById('edit-profile-modal').style.display = 'none';
                 }
             });
-                        // Initialize credit and papad preview listeners
+            // Initialize credit and papad preview listeners
             const creditPhotoInput = document.getElementById('credit-photo');
             if (creditPhotoInput) {
                 creditPhotoInput.addEventListener('change', e => {
