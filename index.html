@@ -4,7 +4,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="HomeExp">
+    <meta name="description" content="Track your home expenses – Milk, Water, Extra and Papad">
     <title>Home Expanses</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icon-512.png">
+    <link rel="apple-touch-icon" href="icon-512.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
@@ -985,6 +993,8 @@
             <button class="tab-btn" onclick="openTab('papad')" data-lang="add_papad">Add Papad Expense</button>
             <button class="tab-btn" onclick="openTab('calendar')" data-lang="calendar_view">Calendar View</button>
             <button class="tab-btn" onclick="openTab('lists')" data-lang="list_view">List View</button>
+            <button class="tab-btn" onclick="openTab('settings')"
+                style="background: linear-gradient(135deg, #6f42c1, #2980b9);">&#9881; Settings</button>
         </section>
         <!-- Dashboard -->
         <section id="dashboard" class="tab-content">
@@ -1002,6 +1012,9 @@
                         PDF</button>
                     <button class="pdf-btn" onclick="generatePapadPDF()" data-lang="download_papad_pdf">Papad
                         PDF</button>
+                    <button class="pdf-btn" onclick="generateAllPDF()"
+                        style="background: linear-gradient(135deg, #6f42c1, #e91e63); font-weight: bold;"
+                        title="Download all modules in one PDF">&#128196; All Data PDF</button>
                 </div>
             </div>
             <div class="stats">
@@ -1048,7 +1061,7 @@
             <form id="milk-form">
                 <input type="date" id="milk-date" required>
                 <input type="number" id="milk-qty" placeholder="Quantity (Liters)" min="0" step="0.5" required>
-                <div><strong data-lang="milk_price">Fixed Price: Rs 60 per Liter</strong>
+                <div><strong id="milk-rate-display" style="color:#3498db;">Rate: Rs 60 per Liter</strong>
                     <div class="auto-amount" id="milk-total">Total: Rs 0</div>
                 </div>
                 <button type="submit" data-lang="add_milk_btn">Add Milk Entry</button>
@@ -1059,7 +1072,7 @@
             <form id="water-form">
                 <input type="date" id="water-date" required>
                 <input type="number" id="water-qty" placeholder="Quantity (Bottles)" min="1" step="1" required>
-                <div><strong data-lang="water_price">Fixed Price: Rs 15 per Bottle</strong>
+                <div><strong id="water-rate-display" style="color:#27ae60;">Rate: Rs 15 per Bottle</strong>
                     <div class="auto-amount" id="water-total">Total: Rs 0</div>
                 </div>
                 <button type="submit" data-lang="add_water_btn">Add Water Entry</button>
@@ -1212,6 +1225,41 @@
             </div>
             <div id="list-grand-total" class="grand-total" style="display:none;"></div>
         </section>
+        <!-- Settings Section -->
+        <section id="settings" class="tab-content" style="display:none;">
+            <h2>&#9881; Settings</h2>
+            <div style="max-width:480px; margin: 0 auto;">
+                <div style="background: var(--stat-bg); border-radius: 18px; padding: 24px; margin-bottom: 24px;">
+                    <h3 style="margin-bottom: 16px; color: var(--heading); font-size: 1.1em;">&#128167; Milk Rate
+                        Settings</h3>
+                    <label style="display:block; margin-bottom:6px; font-weight:600;">Milk Price (per Liter in
+                        Rs)</label>
+                    <input type="number" id="setting-milk-price" placeholder="e.g. 60" min="0" step="0.5"
+                        style="width:100%; margin-bottom:16px;">
+                    <h3 style="margin-bottom: 16px; color: var(--heading); font-size: 1.1em; margin-top:8px;">&#128167;
+                        Water Rate Settings</h3>
+                    <label style="display:block; margin-bottom:6px; font-weight:600;">Water Price (per Bottle in
+                        Rs)</label>
+                    <input type="number" id="setting-water-price" placeholder="e.g. 15" min="0" step="0.5"
+                        style="width:100%; margin-bottom:20px;">
+                    <button onclick="saveSettings()"
+                        style="width:100%; background: linear-gradient(135deg, #6f42c1, #2980b9); font-size:1em; padding: 12px; border-radius: 12px;">&#10003;
+                        Save Rate Settings</button>
+                    <div id="settings-saved-msg"
+                        style="display:none; margin-top:12px; background:#d4edda; color:#155724; border-radius:8px; padding:10px; text-align:center; font-weight:600;">
+                        &#10004; Settings saved successfully!</div>
+                </div>
+                <div style="background: var(--stat-bg); border-radius: 18px; padding: 24px;">
+                    <h3 style="margin-bottom: 12px; color: var(--heading); font-size: 1em;">&#8505; Current Active Rates
+                    </h3>
+                    <p>&#128167; <strong>Milk:</strong> <span id="current-milk-rate">Rs 60</span> per Liter</p>
+                    <p style="margin-top:8px;">&#128167; <strong>Water:</strong> <span id="current-water-rate">Rs
+                            15</span> per Bottle</p>
+                    <p style="margin-top:12px; font-size:0.85em; color: var(--no-data);">&#9888; Changing rates will
+                        apply to all new entries. Existing entries keep their original amounts.</p>
+                </div>
+            </div>
+        </section>
     </div>
     <div id="photo-modal" class="modal" onclick="this.style.display='none'">
         <span class="close-modal">&times;</span>
@@ -1270,7 +1318,9 @@
         let milkEntries = [], waterEntries = [], extraEntries = [], creditEntries = [], papadEntries = [];
         let currentUser = null;
         let monthlyChart = null;
-        const MILK_PRICE = 60, WATER_PRICE = 15;
+        // Dynamic rates loaded from localStorage (fallback to defaults)
+        let MILK_PRICE = parseFloat(localStorage.getItem('milk_price')) || 60;
+        let WATER_PRICE = parseFloat(localStorage.getItem('water_price')) || 15;
         const ADMIN_EMAIL = "homexpanse09@gmail.com";
         const translations = {
             en: {
@@ -1304,8 +1354,6 @@
                 download_water_pdf: "Water PDF",
                 download_extra_pdf: "Extra PDF",
                 download_papad_pdf: "Papad PDF",
-                milk_price: "Fixed Price: Rs 60 per Liter",
-                water_price: "Fixed Price: Rs 15 per Bottle",
                 add_milk_btn: "Add Milk Entry",
                 add_water_btn: "Add Water Entry",
                 add_extra_btn: "Add Extra Expense",
@@ -1338,8 +1386,6 @@
                 view_credit: "क्रेडिट बैलेंस देखें",
                 view_papad: "पापड़ खर्च देखें",
                 filter_category: "श्रेणी:",
-                milk_price: "निश्चित मूल्य: Rs 60 प्रति लीटर",
-                water_price: "निश्चित मूल्य: Rs 15 प्रति बोतल",
                 add_milk_btn: "दूध प्रविष्टि जोड़ें",
                 add_water_btn: "पानी प्रविष्टि जोड़ें",
                 add_extra_btn: "अतिरिक्त खर्च जोड़ें",
@@ -1372,8 +1418,6 @@
                 view_credit: "ક્રેડિટ બેલેન્સ જુઓ",
                 view_papad: "પાપડ ખર્ચ જુઓ",
                 filter_category: "શ્રેણી:",
-                milk_price: "નિશ્ચિત કિંમત: Rs 60 પ્રતિ લિટર",
-                water_price: "નિશ્ચિત કિંમત: Rs 15 પ્રતિ બોટલ",
                 add_milk_btn: "દૂધ એન્ટ્રી ઉમેરો",
                 add_water_btn: "પાણી એન્ટ્રી ઉમેરો",
                 add_extra_btn: "અતિરિક્ત ખર્ચ ઉમેરો",
@@ -1654,6 +1698,36 @@
                 console.error("Save error:", err);
             }
         }
+        function loadSettings() {
+            MILK_PRICE = parseFloat(localStorage.getItem('milk_price')) || 60;
+            WATER_PRICE = parseFloat(localStorage.getItem('water_price')) || 15;
+            // Update UI displays
+            const milkDisplay = document.getElementById('milk-rate-display');
+            if (milkDisplay) milkDisplay.textContent = `Rate: Rs ${MILK_PRICE} per Liter`;
+            const waterDisplay = document.getElementById('water-rate-display');
+            if (waterDisplay) waterDisplay.textContent = `Rate: Rs ${WATER_PRICE} per Bottle`;
+            // Update Settings tab inputs
+            const milkInput = document.getElementById('setting-milk-price');
+            if (milkInput) milkInput.value = MILK_PRICE;
+            const waterInput = document.getElementById('setting-water-price');
+            if (waterInput) waterInput.value = WATER_PRICE;
+            // Update current rate display in settings
+            const curMilk = document.getElementById('current-milk-rate');
+            if (curMilk) curMilk.textContent = `Rs ${MILK_PRICE}`;
+            const curWater = document.getElementById('current-water-rate');
+            if (curWater) curWater.textContent = `Rs ${WATER_PRICE}`;
+        }
+        function saveSettings() {
+            const milkVal = parseFloat(document.getElementById('setting-milk-price').value);
+            const waterVal = parseFloat(document.getElementById('setting-water-price').value);
+            if (isNaN(milkVal) || milkVal < 0) { alert('Please enter a valid milk price.'); return; }
+            if (isNaN(waterVal) || waterVal < 0) { alert('Please enter a valid water price.'); return; }
+            localStorage.setItem('milk_price', milkVal);
+            localStorage.setItem('water_price', waterVal);
+            loadSettings();
+            const msg = document.getElementById('settings-saved-msg');
+            if (msg) { msg.style.display = 'block'; setTimeout(() => msg.style.display = 'none', 3000); }
+        }
         function initApp() {
             const today = new Date().toISOString().split('T')[0];
             ['milk', 'water', 'extra', 'credit', 'papad'].forEach(id => {
@@ -1662,6 +1736,7 @@
             });
             currentLang = localStorage.getItem('preferredLanguage') || 'en';
             document.getElementById('language-select').value = currentLang;
+            loadSettings();
             translatePage();
             populateYearMonthSelects();
             populateCreditPapadSelects();
@@ -1791,7 +1866,8 @@
             if (qtyInput) {
                 qtyInput.addEventListener('input', () => {
                     const qty = parseFloat(qtyInput.value) || 0;
-                    const price = type === 'milk' ? MILK_PRICE : WATER_PRICE;
+                    // Always read fresh price at time of input
+                    const price = type === 'milk' ? (parseFloat(localStorage.getItem('milk_price')) || 60) : (parseFloat(localStorage.getItem('water_price')) || 15);
                     const totalEl = document.getElementById(type + '-total');
                     if (totalEl) totalEl.textContent = `Total: Rs ${(qty * price).toFixed(2)}`;
                 });
@@ -1802,7 +1878,8 @@
                     e.preventDefault();
                     const qty = parseFloat(document.getElementById(type + '-qty').value);
                     const entries = type === 'milk' ? milkEntries : waterEntries;
-                    const price = type === 'milk' ? MILK_PRICE : WATER_PRICE;
+                    // Read fresh price at time of submission
+                    const price = type === 'milk' ? (parseFloat(localStorage.getItem('milk_price')) || 60) : (parseFloat(localStorage.getItem('water_price')) || 15);
                     entries.push({
                         date: document.getElementById(type + '-date').value,
                         qty: qty,
@@ -2021,6 +2098,153 @@
             doc.text(`Total: Rs ${total.toFixed(2)}`, 14, doc.lastAutoTable.finalY + 10);
             doc.save(`Papad_Report_${monthName}_${year}.pdf`);
         }
+        function generateAllPDF() {
+            const month = document.getElementById('dashboard-month').value;
+            const year = document.getElementById('dashboard-year').value;
+            const monthName = month === 'all' ? 'All Months' : new Date(2000, parseInt(month)).toLocaleString('default', { month: 'long' });
+            const yearLabel = year === 'all' ? 'All Years' : year;
+            const milk = getFilteredEntries(month, year, milkEntries).sort((a, b) => a.date.localeCompare(b.date));
+            const water = getFilteredEntries(month, year, waterEntries).sort((a, b) => a.date.localeCompare(b.date));
+            const extra = getFilteredEntries(month, year, extraEntries).sort((a, b) => a.date.localeCompare(b.date));
+            const papad = getFilteredEntries(month, year, papadEntries).sort((a, b) => a.date.localeCompare(b.date));
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            const pageW = doc.internal.pageSize.getWidth();
+            // ---- COVER PAGE ----
+            doc.setFillColor(15, 23, 42);
+            doc.rect(0, 0, pageW, 297, 'F');
+            doc.setFontSize(26);
+            doc.setTextColor(255, 255, 255);
+            doc.text('HOME EXPANSES', pageW / 2, 90, { align: 'center' });
+            doc.setFontSize(14);
+            doc.setTextColor(100, 181, 246);
+            doc.text('Complete Expense Report', pageW / 2, 105, { align: 'center' });
+            doc.setFontSize(12);
+            doc.setTextColor(180, 180, 180);
+            doc.text(`Period: ${monthName} ${yearLabel}`, pageW / 2, 118, { align: 'center' });
+            doc.setFontSize(10);
+            doc.text(`Generated: ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}`, pageW / 2, 128, { align: 'center' });
+            // Summary box
+            const totalMilkAmt = milk.reduce((s, e) => s + e.amount, 0);
+            const totalWaterAmt = water.reduce((s, e) => s + e.amount, 0);
+            const totalExtraAmt = extra.reduce((s, e) => s + e.amount, 0);
+            const totalPapadAmt = papad.reduce((s, e) => s + e.amount, 0);
+            const grandTotal = totalMilkAmt + totalWaterAmt + totalExtraAmt + totalPapadAmt;
+            doc.setFillColor(30, 41, 59);
+            doc.roundedRect(20, 145, pageW - 40, 90, 6, 6, 'F');
+            doc.setFontSize(11);
+            doc.setTextColor(100, 200, 255);
+            doc.text('SUMMARY', pageW / 2, 160, { align: 'center' });
+            doc.setFontSize(10);
+            const summaryRows = [
+                ['[ Milk ]', milk.reduce((s, e) => s + e.qty, 0).toFixed(1) + ' Ltr', 'Rs ' + totalMilkAmt.toFixed(2)],
+                ['[ Water ]', water.reduce((s, e) => s + e.qty, 0) + ' Btl', 'Rs ' + totalWaterAmt.toFixed(2)],
+                ['[ Extra ]', extra.length + ' entries', 'Rs ' + totalExtraAmt.toFixed(2)],
+                ['[ Papad ]', papad.length + ' entries', 'Rs ' + totalPapadAmt.toFixed(2)],
+            ];
+            summaryRows.forEach((r, i) => {
+                doc.setTextColor(200, 200, 200);
+                doc.text(r[0], 30, 172 + i * 12);
+                doc.text(r[1], pageW / 2, 172 + i * 12, { align: 'center' });
+                doc.setTextColor(100, 255, 180);
+                doc.text(r[2], pageW - 30, 172 + i * 12, { align: 'right' });
+            });
+            doc.setDrawColor(100, 181, 246);
+            doc.line(30, 223, pageW - 30, 223);
+            doc.setFontSize(12);
+            doc.setTextColor(255, 215, 0);
+            doc.text('GRAND TOTAL', 30, 232);
+            doc.text('Rs ' + grandTotal.toFixed(2), pageW - 30, 232, { align: 'right' });
+            // ---- SECTION 1: MILK ----
+            doc.addPage();
+            doc.setFillColor(52, 152, 219);
+            doc.rect(0, 0, pageW, 22, 'F');
+            doc.setFontSize(14);
+            doc.setTextColor(255, 255, 255);
+            doc.text('MILK REPORT', pageW / 2, 14, { align: 'center' });
+            if (milk.length === 0) {
+                doc.setFontSize(11); doc.setTextColor(120, 120, 120);
+                doc.text('No milk entries for this period.', pageW / 2, 40, { align: 'center' });
+            } else {
+                doc.autoTable({
+                    head: [['#', 'Date', 'Quantity (Ltr)', 'Amount (Rs)']],
+                    body: milk.map((e, i) => [i + 1, e.date, e.qty.toFixed(1), e.amount.toFixed(2)]),
+                    foot: [['', 'TOTAL', milk.reduce((s, e) => s + e.qty, 0).toFixed(1) + ' Ltr', 'Rs ' + totalMilkAmt.toFixed(2)]],
+                    startY: 26, theme: 'grid',
+                    headStyles: { fillColor: [52, 152, 219], textColor: 255, fontStyle: 'bold' },
+                    footStyles: { fillColor: [52, 100, 180], textColor: 255, fontStyle: 'bold' },
+                    alternateRowStyles: { fillColor: [235, 245, 255] },
+                    styles: { cellPadding: 4, fontSize: 9 }
+                });
+            }
+            // ---- SECTION 2: WATER ----
+            doc.addPage();
+            doc.setFillColor(39, 174, 96);
+            doc.rect(0, 0, pageW, 22, 'F');
+            doc.setFontSize(14);
+            doc.setTextColor(255, 255, 255);
+            doc.text('WATER REPORT', pageW / 2, 14, { align: 'center' });
+            if (water.length === 0) {
+                doc.setFontSize(11); doc.setTextColor(120, 120, 120);
+                doc.text('No water entries for this period.', pageW / 2, 40, { align: 'center' });
+            } else {
+                doc.autoTable({
+                    head: [['#', 'Date', 'Quantity (Btl)', 'Amount (Rs)']],
+                    body: water.map((e, i) => [i + 1, e.date, e.qty, e.amount.toFixed(2)]),
+                    foot: [['', 'TOTAL', water.reduce((s, e) => s + e.qty, 0) + ' Btl', 'Rs ' + totalWaterAmt.toFixed(2)]],
+                    startY: 26, theme: 'grid',
+                    headStyles: { fillColor: [39, 174, 96], textColor: 255, fontStyle: 'bold' },
+                    footStyles: { fillColor: [30, 130, 70], textColor: 255, fontStyle: 'bold' },
+                    alternateRowStyles: { fillColor: [232, 250, 240] },
+                    styles: { cellPadding: 4, fontSize: 9 }
+                });
+            }
+            // ---- SECTION 3: EXTRA ----
+            doc.addPage();
+            doc.setFillColor(155, 89, 182);
+            doc.rect(0, 0, pageW, 22, 'F');
+            doc.setFontSize(14);
+            doc.setTextColor(255, 255, 255);
+            doc.text('EXTRA EXPENSES REPORT', pageW / 2, 14, { align: 'center' });
+            if (extra.length === 0) {
+                doc.setFontSize(11); doc.setTextColor(120, 120, 120);
+                doc.text('No extra expenses for this period.', pageW / 2, 40, { align: 'center' });
+            } else {
+                doc.autoTable({
+                    head: [['#', 'Date', 'Category', 'Description', 'Amount (Rs)']],
+                    body: extra.map((e, i) => [i + 1, e.date, e.category, e.description, e.amount.toFixed(2)]),
+                    foot: [['', '', '', 'TOTAL', 'Rs ' + totalExtraAmt.toFixed(2)]],
+                    startY: 26, theme: 'grid',
+                    headStyles: { fillColor: [155, 89, 182], textColor: 255, fontStyle: 'bold' },
+                    footStyles: { fillColor: [120, 60, 150], textColor: 255, fontStyle: 'bold' },
+                    alternateRowStyles: { fillColor: [248, 240, 255] },
+                    styles: { cellPadding: 4, fontSize: 9 }
+                });
+            }
+            // ---- SECTION 4: PAPAD ----
+            doc.addPage();
+            doc.setFillColor(243, 156, 18);
+            doc.rect(0, 0, pageW, 22, 'F');
+            doc.setFontSize(14);
+            doc.setTextColor(255, 255, 255);
+            doc.text('PAPAD EXPENSES REPORT', pageW / 2, 14, { align: 'center' });
+            if (papad.length === 0) {
+                doc.setFontSize(11); doc.setTextColor(120, 120, 120);
+                doc.text('No papad expenses for this period.', pageW / 2, 40, { align: 'center' });
+            } else {
+                doc.autoTable({
+                    head: [['#', 'Date', 'Category', 'Mode', 'Remarks', 'Amount (Rs)']],
+                    body: papad.map((e, i) => [i + 1, e.date, e.category, e.mode, e.remarks || '-', e.amount.toFixed(2)]),
+                    foot: [['', '', '', '', 'TOTAL', 'Rs ' + totalPapadAmt.toFixed(2)]],
+                    startY: 26, theme: 'grid',
+                    headStyles: { fillColor: [243, 156, 18], textColor: 255, fontStyle: 'bold' },
+                    footStyles: { fillColor: [200, 120, 10], textColor: 255, fontStyle: 'bold' },
+                    alternateRowStyles: { fillColor: [255, 248, 230] },
+                    styles: { cellPadding: 4, fontSize: 9 }
+                });
+            }
+            doc.save(`HomeExpanses_Complete_${monthName}_${yearLabel}.pdf`);
+        }
         function renderCalendar() {
             const monthVal = document.getElementById('cal-month').value;
             const yearVal = document.getElementById('cal-year').value;
@@ -2208,7 +2432,9 @@
                         if (newDate && !isNaN(newQty) && newQty >= 0) {
                             entries[idx].date = newDate;
                             entries[idx].qty = newQty;
-                            entries[idx].amount = newQty * (type === 'milk' ? MILK_PRICE : WATER_PRICE);
+                            // Use current rate at time of edit
+                            const editPrice = type === 'milk' ? (parseFloat(localStorage.getItem('milk_price')) || 60) : (parseFloat(localStorage.getItem('water_price')) || 15);
+                            entries[idx].amount = newQty * editPrice;
                             await saveData();
                             renderLists();
                             updateDashboard();
@@ -2989,6 +3215,7 @@
             if (tabName === 'lists') renderLists();
             if (tabName === 'credit') renderCreditList('credit-list');
             if (tabName === 'papad') renderPapadList();
+            if (tabName === 'settings') loadSettings();
         }
         // Photo modal close on escape
         document.addEventListener('keydown', (e) => {
@@ -3032,6 +3259,12 @@
                     };
                     reader.readAsDataURL(file);
                 }
+            });
+        }
+        // Register Service Worker for PWA support
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(() => { });
             });
         }
     </script>
